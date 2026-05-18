@@ -3,29 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PW26- </title>
+    <title>QUIZZING</title>
     <link rel="stylesheet" href="style.css">
+    <script src="main.js" defer></script>
 </head>
 <body>
 
     <header class="surface-block">
-        QUIZZONE - METTI ALLA PROVA LE TUE CONOSCENZE
+        <div class="header-title">QUIZZING</div>
+        <div class="header-subtitle">Metti alla prova le tue conoscenze</div>
     </header>
 
     <div class="main-content">
         <div class="panel left">
-            <h2>Filtro Ricerca</h2>
-            <div class="contenuto-fittizio">Qui già fatto il check, con testo lungo la scrollbar funziona &darr;</div>
+            <div class="panel-body">
+                <div class="user-selection-container">
+                    <h2>Seleziona Utente</h2>
+                    <form class="user-selection">
+                        <label for="user-selection">Seleziona utente:</label>
+                        <select name="user-selection" id="user-selection">
+                            <option value="">Utente 1</option>
+                            <option value="">Utente 2</option>
+                            <option value="">Utente 3</option>
+                        </select>
+                    </form> <!-- Form di selezione utente, manda utente attivo onChange senza submit-->
+                </div>
+                <br> <!-- Spazio momentaneo-->
+                <div class="filter-container">
+                    <h2>Filtri</h2>
+                    <div class="cazzago">Filtri variabili in base alla pagina o nascondi sezione nascondendo con css la classe filter-container</div>
+                </div>
+            </div>
         </div>
         
         <div class="panel center">
-            <h2>Contenuto/Risultati</h2>
-            <div class="contenuto-fittizio">Qui già fatto il check, con testo lungo la scrollbar funziona &darr;</div>
+            <div class="panel-body">
+                <h2 id="center-title">Home</h2>
+                <div class="travagliato">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</div>
+            </div>
         </div>
         
         <div class="panel right">
-            <h2>Nav</h2>
-            <div class="contenuto-fittizio">Qui già fatto il check, con testo lungo la scrollbar funziona &darr;</div>
+            <div class="panel-body"> <!-- Aggiungere link a pagine e stili-->
+                <h2>Nav</h2>
+                <div class="nav-item active" data-label="Home">Home</div>
+                <div class="nav-item" data-label="Ricerca Utenti">Ricerca Utenti</div>
+                <div class="nav-item" data-label="Ricerca Quiz">Ricerca Quiz</div>
+                <div class="nav-item" data-label="Ricerca Partecipazioni">Ricerca Partecipazioni</div>
+                <hr class="nav-separator">
+                <div class="nav-item" data-label="Gestione Utenti">Gestione Utenti</div>
+            </div>
         </div>
     </div>
 

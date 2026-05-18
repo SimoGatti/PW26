@@ -1,128 +1,221 @@
-/* Reset di base per margini e padding */
+/* ─── Google Font ─────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── Reset ──────────────────────────────────────────────────── */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+/* ─── Design Tokens ───────────────────────────────────────────── */
 :root {
-    --cream-color: #f3ecd9;
-    --surface-color: #ffffff;
-    --text-color: #333333;
-    --header-height: 80px;
-    --footer-height: 84px;
-    --outer-gap: 12px;
-    --panel-gap: 8px;
+    --bg:              #f0f2f5;
+    --surface:         #ffffff;
+    --surface-raised:  #ffffff;
+    --border:          #e8eaed;
+    --text-primary:    #1a1a2e;
+    --text-secondary:  #35383d;
+    --accent:          #4f46e5;
+    --accent-light:    #ede9fe;
+    --radius-sm:       8px;
+    --radius-md:       14px;
+    --radius-lg:       18px;
+    --shadow-sm:       0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-md:       0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.04);
+    --header-height:   72px;
+    --footer-height:   80px;
+    --outer-gap:       14px;
+    --panel-gap:       10px;
 }
 
-html,
-body {
-    font-family: sans-serif;
+/* ─── Base ────────────────────────────────────────────────────── */
+html, body {
     height: 100%;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* La pagina resta sempre vincolata alla viewport */
 body {
-    height: 100dvh;
+    height: 100vh;
     display: grid;
     grid-template-rows: var(--header-height) minmax(0, 1fr) var(--footer-height);
-    background-color: var(--cream-color);
-    color: var(--text-color);
+    background-color: var(--bg);
+    color: var(--text-primary);
     overflow: hidden;
     padding: var(--outer-gap);
     gap: var(--panel-gap);
 }
 
-/* Stili per Header e Footer */
-header,
-footer {
+/* ─── Header ──────────────────────────────────────────────────── */
+header {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: var(--surface-color);
+    gap: 3px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    overflow: hidden;        /* non sfora mai la riga del grid */
+    flex-shrink: 0;           /* non si restringe su zoom */
+}
+
+.header-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.header-subtitle {
+    font-size: 0.72rem;
     font-weight: bold;
-    font-size: 1.5rem;
-    line-height: 1;
-    z-index: 1;
+    color: var(--text-secondary);
+    letter-spacing: 0.03em;
+    text-align: center;
 }
 
-footer {
-    flex-direction: column;
-    gap: 6px;
-    padding-inline: 16px;
-}
-
-/* Contenitore centrale */
+/* ─── Main layout ─────────────────────────────────────────────── */
 .main-content {
     display: grid;
     grid-template-columns: 1.1fr 5.8fr 1.3fr;
     min-height: 0;
+    min-width: 0;             /* evita overflow celle grid */
     overflow: hidden;
     gap: var(--panel-gap);
 }
 
-/* Stile per i 3 pannelli verticali */
+/* ─── Panels ──────────────────────────────────────────────────── */
+/*
+ * .panel  → outer shell: border-radius + overflow:hidden agisce come clip mask.
+ * .panel-body → inner scroll: scrollbar rimane dentro i bordi arrotondati.
+ */
 .panel {
-    background-color: var(--surface-color);
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
-    padding: 24px 18px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+    min-height: 0;
+    min-width: 0;             /* evita overflow nelle celle grid */
+    transition: box-shadow .2s ease;
+}
+
+.panel:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.panel-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     min-height: 0;
 }
 
-/* Bordi */
-.panel.left {
-    box-shadow: none;
+/* ─── Custom scrollbar ────────────────────────────────────────── */
+.panel-body::-webkit-scrollbar {
+    width: 5px;
+}
+.panel-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.panel-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 99px;
+}
+.panel-body::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
 }
 
-.panel.center {
-    box-shadow: none;
-}
-
-.panel.right {
-    box-shadow: none;
-}
-
+/* ─── Panel headings ──────────────────────────────────────────── */
 h2 {
-    font-size: 1.1rem;
-    margin-bottom: 20px;
-    text-align: center;
+    font-size: 0.78rem;
     font-weight: 600;
-}
-
-/* Contenuto fittizio per mostrare chiaramente le scrollbar */
-.contenuto-fittizio {
-    height: 1200px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
     width: 100%;
-    background: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
+    overflow-wrap: break-word;    /* titoli lunghi vanno a capo, non sforan */
+    min-width: 0;
+}
+
+/* ─── Footer ──────────────────────────────────────────────────── */
+footer {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding-top: 20px;
-    color: #888;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    padding-inline: 20px;
+    overflow: hidden;        /* non sfora mai la riga del grid */
+    flex-shrink: 0;           /* non si restringe su zoom */
+    min-height: var(--footer-height);
 }
 
-.surface-block {
-    box-shadow: none;
-}
-
-.footer-title,
-.footer-subtitle {
+.footer-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
     text-align: center;
     white-space: nowrap;
 }
 
-.footer-title {
-    font-size: 1.25rem;
-    font-weight: 700;
+.footer-subtitle {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.4;
+    max-width: 72ch;
 }
 
-.footer-subtitle {
-    font-size: 0.72rem;
-    font-weight: 400;
-    line-height: 1.1;
+/* ─── Nav items ───────────────────────────────────────────────── */
+.nav-item {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+    white-space: nowrap;          /* non va mai a capo */
+    overflow: hidden;             /* testo lungo → tagliato */
+    text-overflow: ellipsis;      /* … al posto del testo tagliato */
+    flex-shrink: 0;               /* non si restringe nel flex column */
+}
+
+.nav-item:hover {
+    background: var(--bg);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.nav-separator {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 6px 0;
 }
