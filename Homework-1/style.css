@@ -81,7 +81,7 @@ header {
 /* ─── Main layout ─────────────────────────────────────────────── */
 .main-content {
     display: grid;
-    grid-template-columns: 1.1fr 5.8fr 1.3fr;
+    grid-template-columns: 1.35fr minmax(0, 5.15fr) 1.5fr;
     min-height: 0;
     min-width: 0;             /* evita overflow celle grid */
     overflow: hidden;
@@ -122,6 +122,11 @@ header {
     min-height: 0;
 }
 
+.left .panel-body {
+    align-items: stretch;
+    padding: clamp(14px, 1.4vw, 22px);
+}
+
 /* ─── Custom scrollbar ────────────────────────────────────────── */
 .panel-body::-webkit-scrollbar {
     width: 5px;
@@ -150,6 +155,58 @@ h2 {
     width: 100%;
     overflow-wrap: break-word;    /* titoli lunghi vanno a capo, non sforan */
     min-width: 0;
+}
+
+.left h2,
+.left label,
+.left .cazzago {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.left h2 {
+    font-size: clamp(0.7rem, 0.55rem + 0.35vw, 0.78rem);
+    letter-spacing: clamp(0.03em, 0.02em + 0.1vw, 0.08em);
+}
+
+.user-selection-container,
+.filter-container,
+.user-selection {
+    width: 100%;
+    min-width: 0;
+}
+
+.user-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.left label {
+    display: block;
+    width: 100%;
+    font-size: clamp(0.76rem, 0.62rem + 0.35vw, 0.88rem);
+    color: var(--text-secondary);
+}
+
+.left select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: clamp(8px, 0.8vw, 10px) clamp(10px, 1vw, 12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.left .cazzago {
+    width: 100%;
+    min-width: 0;
+    font-size: clamp(0.74rem, 0.62rem + 0.32vw, 0.88rem);
+    line-height: 1.4;
+    color: var(--text-secondary);
 }
 
 /* ─── Footer ──────────────────────────────────────────────────── */
