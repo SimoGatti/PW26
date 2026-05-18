@@ -1,0 +1,128 @@
+/* Reset di base per margini e padding */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --cream-color: #f3ecd9;
+    --surface-color: #ffffff;
+    --text-color: #333333;
+    --header-height: 80px;
+    --footer-height: 84px;
+    --outer-gap: 12px;
+    --panel-gap: 8px;
+}
+
+html,
+body {
+    font-family: sans-serif;
+    height: 100%;
+}
+
+/* La pagina resta sempre vincolata alla viewport */
+body {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: var(--header-height) minmax(0, 1fr) var(--footer-height);
+    background-color: var(--cream-color);
+    color: var(--text-color);
+    overflow: hidden;
+    padding: var(--outer-gap);
+    gap: var(--panel-gap);
+}
+
+/* Stili per Header e Footer */
+header,
+footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--surface-color);
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 1;
+    z-index: 1;
+}
+
+footer {
+    flex-direction: column;
+    gap: 6px;
+    padding-inline: 16px;
+}
+
+/* Contenitore centrale */
+.main-content {
+    display: grid;
+    grid-template-columns: 1.1fr 5.8fr 1.3fr;
+    min-height: 0;
+    overflow: hidden;
+    gap: var(--panel-gap);
+}
+
+/* Stile per i 3 pannelli verticali */
+.panel {
+    background-color: var(--surface-color);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    padding: 24px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 0;
+}
+
+/* Bordi */
+.panel.left {
+    box-shadow: none;
+}
+
+.panel.center {
+    box-shadow: none;
+}
+
+.panel.right {
+    box-shadow: none;
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Contenuto fittizio per mostrare chiaramente le scrollbar */
+.contenuto-fittizio {
+    height: 1200px;
+    width: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #f9f9f9 100%);
+    display: flex;
+    justify-content: center;
+    padding-top: 20px;
+    color: #888;
+}
+
+.surface-block {
+    box-shadow: none;
+}
+
+.footer-title,
+.footer-subtitle {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.footer-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.footer-subtitle {
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.1;
+}
