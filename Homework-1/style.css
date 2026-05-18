@@ -122,6 +122,13 @@ header {
     min-height: 0;
 }
 
+/* Il nav panel non ha contenuto scrollabile normalmente:
+   scrollbar-gutter:auto evita che il gutter riservato (5-17px)
+   falsi la misurazione del troncamento a certi zoom level */
+#nav-panel {
+    scrollbar-gutter: auto;
+}
+
 .left .panel-body {
     align-items: stretch;
     padding: clamp(14px, 1.4vw, 22px);
@@ -253,10 +260,9 @@ footer {
     color: var(--text-secondary);
     cursor: pointer;
     transition: background .15s ease, color .15s ease;
-    white-space: nowrap;          /* non va mai a capo */
-    overflow: hidden;             /* testo lungo → tagliato */
-    text-overflow: ellipsis;      /* … al posto del testo tagliato */
-    flex-shrink: 0;               /* non si restringe nel flex column */
+    flex-shrink: 0;
+    /* white-space/overflow/text-overflow vanno su .nav-label, non qui:
+       su un flex container non hanno l'effetto di ellipsis sui figli */
 }
 
 .nav-item:hover {
@@ -275,4 +281,54 @@ footer {
     border: none;
     border-top: 1px solid var(--border);
     margin: 6px 0;
+}
+
+/* ─── Nav icon + label ────────────────────────────────────────── */
+.nav-item {
+    /* Override: flex row per affiancare icona e testo */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    object-fit: contain;
+    opacity: 0.55;
+    transition: opacity .15s ease;
+}
+
+.nav-item:hover   .nav-icon,
+.nav-item.active  .nav-icon {
+    opacity: 1;
+}
+
+.nav-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: opacity .15s ease, max-width .2s ease;
+}
+
+/* ─── Icon-only mode (attivato da JS via ResizeObserver) ─────── */
+#nav-panel.icon-only .nav-item {
+    justify-content: center;
+}
+
+#nav-panel.icon-only .nav-label {
+    display: none;
+}
+
+#nav-panel.icon-only .nav-icon {
+    width: 22px;
+    height: 22px;
+    opacity: 0.7;
+}
+
+#nav-panel.icon-only .nav-item.active .nav-icon,
+#nav-panel.icon-only .nav-item:hover  .nav-icon {
+    opacity: 1;
 }
