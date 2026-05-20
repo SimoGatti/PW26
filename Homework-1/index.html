@@ -14,8 +14,8 @@
         <div class="header-subtitle">Metti alla prova le tue conoscenze</div>
     </header>
 
-    <div class="main-content">
-        <div class="panel left">
+    <main class="main-content">
+        <aside class="panel left">
             <div class="panel-body">
                 <div class="user-selection-container">
                     <h2>Seleziona Utente</h2>
@@ -34,42 +34,71 @@
                     <div class="cazzago">Filtri variabili in base alla pagina o nascondi sezione nascondendo con css la classe filter-container</div>
                 </div>
             </div>
-        </div>
+        </aside>
         
-        <div class="panel center">
+        <section class="panel center">
             <div class="panel-body">
                 <h2 id="center-title">Home</h2>
-                <div class="travagliato">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?</div>
+                <div id="center-content" class="center-content" aria-live="polite"></div>
             </div>
-        </div>
+
+            <template id="view-home-template">
+                <section class="content-view content-view-home" data-view="Home">
+                    <article class="home-card home-card-primary home-card-merged">
+                        <p class="home-kicker">Benvenuto su Quizzing</p>
+                        <h3 class="home-title">Allenati, esplora i contenuti e affronta i quiz.</h3>
+                        <div class="home-divider"></div>
+                        <p class="home-card-eyebrow">Come iniziare</p>
+                        <h4 class="home-card-title">Segui questi passaggi</h4>
+                        <ol class="home-steps">
+                            <li>Seleziona un utente dal pannello a sinistra.</li>
+                            <li>Apri una voce della sezione Nav per scegliere cosa consultare.</li>
+                            <li>Quando trovi un quiz, inizialo e completa le domande mostrate.</li>
+                        </ol>
+                    </article>
+                </section>
+            </template>
+
+            <template id="view-message-template">
+                <section class="content-view content-view-message">
+                    <p class="placeholder-copy" data-message-text></p>
+                </section>
+            </template>
+
+            <template id="view-loading-template">
+                <section class="content-view content-view-message">
+                    <p class="placeholder-copy">Caricamento...</p>
+                </section>
+            </template>
+        </section>
         
-        <div class="panel right">
-            <div class="panel-body" id="nav-panel">
+        <aside class="panel right">
+            <nav class="panel-body" id="nav-panel" aria-label="Navigazione principale">
                 <h2>Nav</h2>
-                <div class="nav-item active" data-label="Home" data-icon="assets/home.svg" title="Home">
-                    <img class="nav-icon" src="assets/home.svg" alt="Home">
+                <a class="nav-item active" href="?view=home" data-route="home" data-title="Home" data-action="home" title="Home">
+                    <img class="nav-icon" src="assets/home.svg" alt="">
                     <span class="nav-label">Home</span>
-                </div>
-                <div class="nav-item" data-label="Ricerca Utenti" data-icon="assets/utenti.svg" title="Ricerca Utenti">
-                    <img class="nav-icon" src="assets/utenti.svg" alt="Ricerca Utenti">
+                </a>
+                <a class="nav-item" href="?view=ricerca-utenti" data-route="ricerca-utenti" data-title="Ricerca Utenti" data-action="search_users" title="Ricerca Utenti">
+                    <img class="nav-icon" src="assets/utenti.svg" alt="">
                     <span class="nav-label">Ricerca Utenti</span>
-                </div>
-                <div class="nav-item" data-label="Ricerca Quiz" data-icon="assets/quiz.svg" title="Ricerca Quiz">
-                    <img class="nav-icon" src="assets/quiz.svg" alt="Ricerca Quiz">
+                </a>
+                <a class="nav-item" href="?view=ricerca-quiz" data-route="ricerca-quiz" data-title="Ricerca Quiz" data-action="search_quizzes" title="Ricerca Quiz">
+                    <img class="nav-icon" src="assets/quiz.svg" alt="">
                     <span class="nav-label">Ricerca Quiz</span>
-                </div>
-                <div class="nav-item" data-label="Ricerca Partecipazioni" data-icon="assets/partecipazioni.svg" title="Ricerca Partecipazioni">
-                    <img class="nav-icon" src="assets/partecipazioni.svg" alt="Ricerca Partecipazioni">
+                </a>
+                <a class="nav-item" href="?view=ricerca-partecipazioni" data-route="ricerca-partecipazioni" data-title="Ricerca Partecipazioni" data-action="search_participations" title="Ricerca Partecipazioni">
+                    <img class="nav-icon" src="assets/partecipazioni.svg" alt="">
                     <span class="nav-label">Ricerca Partecipazioni</span>
-                </div>
+                </a>
                 <hr class="nav-separator">
-                <div class="nav-item" data-label="Gestione Utenti" data-icon="assets/gestione.svg" title="Gestione Utenti">
-                    <img class="nav-icon" src="assets/gestione.svg" alt="Gestione Utenti">
+                <a class="nav-item" href="?view=gestione-utenti" data-route="gestione-utenti" data-title="Gestione Utenti" data-action="manage_users" title="Gestione Utenti">
+                    <img class="nav-icon" src="assets/gestione.svg" alt="">
                     <span class="nav-label">Gestione Utenti</span>
-                </div>
-            </div>
-        </div>
-    </div>
+                </a>
+            </nav>
+        </aside>
+    </main>
 
     <footer class="surface-block">
         <div class="footer-title">DISCLAIMER : Questo sito è stato creato con fini accademici.</div>
