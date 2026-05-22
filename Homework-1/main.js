@@ -126,7 +126,7 @@ function updateBrowserUrl(item, replaceState = false) {
 }
 
 async function fetchSectionData(action, extraParams = {}) {
-    const apiUrl = CONFIG.useRemoteApi
+    const apiUrl = CONFIG.remoteApiUrl
         ? new URL(CONFIG.remoteApiUrl)
         : new URL('api.php', window.location.href);
     apiUrl.searchParams.set('action', action);
