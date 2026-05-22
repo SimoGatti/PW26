@@ -142,35 +142,17 @@ if ($action === '') {
 try {
     switch ($action) {
         case 'home':
-            try {
-                // Tenta di connettersi al database (locale o AlterVista a seconda del flag)
-                $pdo = db();
-                
-                // Raccogliamo i conteggi reali dalle tabelle del database
-                $stmtQuiz = $pdo->query("SELECT COUNT(*) as cnt FROM `Quiz`");
-                $quizCount = $stmtQuiz ? ($stmtQuiz->fetch()['cnt'] ?? 0) : 0;
+            $pdo = db();
+            $quizCount     = $pdo->query("SELECT COUNT(*) FROM `Quiz`")->fetchColumn();
+            $questionCount = $pdo->query("SELECT COUNT(*) FROM `Domanda`")->fetchColumn();
+            $userCount     = $pdo->query("SELECT COUNT(*) FROM `Utente`")->fetchColumn();
 
-                $stmtDomanda = $pdo->query("SELECT COUNT(*) as cnt FROM `Domanda`");
-                $questionCount = $stmtDomanda ? ($stmtDomanda->fetch()['cnt'] ?? 0) : 0;
-
-                $stmtUtente = $pdo->query("SELECT COUNT(*) as cnt FROM `Utente`");
-                $userCount = $stmtUtente ? ($stmtUtente->fetch()['cnt'] ?? 0) : 0;
-
-                respond(200, 'success', 'Dati reali caricati correttamente.', [
-                    'quiz_count' => (int) $quizCount,
-                    'question_count' => (int) $questionCount,
-                    'user_count' => (int) $userCount,
-                    'mode' => USE_ALTERVISTA_DB ? 'ALTERVISTA' : 'LOCAL'
-                ]);
-            } catch (Throwable $exception) {
-                // Fallback elegante su dati Mock se il database non è connesso o le tabelle non sono create
-                respond(200, 'success', 'Caricamento da database non disponibile (' . $exception->getMessage() . '). Dati simulati caricati.', [
-                    'quiz_count' => 12,
-                    'question_count' => 250,
-                    'user_count' => 3,
-                    'mode' => 'MOCK'
-                ]);
-            }
+            respond(200, 'success', 'Statistiche caricate.', [
+                'quiz_count'     => (int) $quizCount,
+                'question_count' => (int) $questionCount,
+                'user_count'     => (int) $userCount,
+                'mode'           => USE_ALTERVISTA_DB ? 'ALTERVISTA' : 'LOCAL'
+            ]);
             break;
 
         case 'list_usernames':

@@ -143,10 +143,18 @@ async function fetchSectionData(action, extraParams = {}) {
         }
     });
 
-    const payload = await response.json();
+    let payload;
+    try {
+        payload = await response.json();
+    } catch (parseError) {
+        throw new Error(
+            `[HTTP ${response.status}] La risposta non è JSON valido. ` +
+            `Verifica che il server stia eseguendo PHP e non restituendo HTML. URL: ${apiUrl}`
+        );
+    }
 
     if (!response.ok || payload.status !== 'success') {
-        throw new Error(payload.message || 'Errore durante il caricamento della sezione.');
+        throw new Error(`[HTTP ${response.status}] ${payload.message || 'Errore sconosciuto dal server.'}`);
     }
 
     return payload;
@@ -179,7 +187,7 @@ async function activateRoute(route, options = {}) {
                 }
             })
             .catch(error => {
-                console.warn("Impossibile caricare le statistiche reali:", error);
+                console.error('[QUIZZING] Errore caricamento statistiche:', error.message);
             });
         return;
     }
