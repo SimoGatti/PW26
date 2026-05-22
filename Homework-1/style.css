@@ -136,6 +136,7 @@ header {
 .left .panel-body {
     align-items: stretch;
     padding: clamp(14px, 1.4vw, 22px);
+    gap: 20px;
 }
 
 /* ─── Custom scrollbar ────────────────────────────────────────── */
@@ -164,13 +165,17 @@ h2 {
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border);
     width: 100%;
-    overflow-wrap: break-word;    /* titoli lunghi vanno a capo, non sforan */
+    overflow-wrap: break-word;
     min-width: 0;
 }
 
+/* Center title hidden on home view */
+.center-title--hidden {
+    display: none;
+}
+
 .left h2,
-.left label,
-.left .cazzago {
+.left label {
     overflow-wrap: anywhere;
     word-break: break-word;
 }
@@ -181,43 +186,84 @@ h2 {
 }
 
 .user-selection-container,
-.filter-container,
-.user-selection {
+.filter-container {
     width: 100%;
     min-width: 0;
 }
 
-.user-selection {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.left label {
-    display: block;
-    width: 100%;
-    font-size: clamp(0.76rem, 0.62rem + 0.35vw, 0.88rem);
-    color: var(--text-secondary);
-}
-
-.left select {
+/* ─── Custom select ───────────────────────────────────────── */
+.custom-select-wrapper {
+    position: relative;
     width: 100%;
     min-width: 0;
-    max-width: 100%;
-    padding: clamp(8px, 0.8vw, 10px) clamp(10px, 1vw, 12px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface-raised);
-    color: var(--text-primary);
+}
+
+/* Il <select> nativo copre tutto il wrapper: invisibile ma cliccabile */
+.custom-select-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
     font: inherit;
 }
 
-.left .cazzago {
-    width: 100%;
+/* Layer visivo */
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
     min-width: 0;
-    font-size: clamp(0.74rem, 0.62rem + 0.32vw, 0.88rem);
-    line-height: 1.4;
+    user-select: none;
+}
+
+/* Focus ring: scatta quando il <select> nativo ha focus */
+.custom-select-wrapper:focus-within .custom-select-trigger {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(32, 34, 38, 0.1);
+}
+
+.custom-select-wrapper:hover .custom-select-trigger {
+    border-color: #c4c6ca;
+}
+
+.custom-select-value {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* Opzione vuota (placeholder) */
+.custom-select-wrapper.is-placeholder .custom-select-value {
     color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.custom-select-chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    transition: transform .2s ease;
+}
+
+/* Ruota la freccia quando il select è aperto (focus) */
+.custom-select-wrapper:focus-within .custom-select-chevron {
+    transform: rotate(180deg);
 }
 
 .center-content {
@@ -234,30 +280,6 @@ h2 {
     padding: clamp(8px, 1vw, 16px) 0;
 }
 
-.content-view-home {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    padding: clamp(8px, 1vw, 16px) 0 6px;
-}
-
-.home-kicker {
-    font-size: 0.76rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent);
-}
-
-.home-title {
-    max-width: 16ch;
-    font-size: clamp(2rem, 1.55rem + 1vw, 3rem);
-    line-height: 0.98;
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: var(--text-primary);
-}
-
 .placeholder-copy {
     font-size: 0.98rem;
     line-height: 1.75;
@@ -265,70 +287,246 @@ h2 {
     max-width: 64ch;
 }
 
+/* ─── Home card (wrapper) ──────────────────────────────────── */
 .home-card {
-    background: var(--surface-raised);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 4px 0 32px;
+    box-shadow: none;
+    animation: home-fade-in .45s ease both;
+    width: 100%;
+}
+
+@keyframes home-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Home hero (two-column grid) ───────────────────────────── */
+.home-hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+    width: 100%;
+}
+
+/* Left column: title + subtitle + CTAs */
+.home-hero-lead {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-top: 6px;   /* align optically with card tops */
+}
+
+.home-title {
+    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 3rem);
+    line-height: 1.0;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    animation: home-fade-in .4s .05s ease both;
+}
+
+.home-subtitle {
+    font-size: 0.93rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    max-width: 52ch;
+    margin-bottom: 26px;
+    animation: home-fade-in .4s .1s ease both;
+}
+
+/* CTA buttons */
+.home-cta-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: home-fade-in .4s .15s ease both;
+}
+
+.home-cta-primary,
+.home-cta-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    cursor: pointer;
+}
+
+.home-cta-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(15, 18, 24, .18);
+}
+
+.home-cta-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(15, 18, 24, .22);
+}
+
+.home-cta-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 22px 22px 20px;
-    box-shadow: 0 10px 24px rgba(15, 18, 24, .035);
+    box-shadow: 0 2px 6px rgba(15, 18, 24, .05);
 }
 
-.home-card-primary {
-    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+.home-cta-secondary:hover {
+    background: var(--bg);
+    transform: translateY(-1px);
 }
 
-.home-card-merged {
-    padding: clamp(28px, 4vw, 42px);
-    box-shadow: 0 18px 40px rgba(15, 18, 24, .05);
-}
-
+/* ─── Divider ──────────────────────────────────────────────── */
 .home-divider {
-    width: min(220px, 40%);
+    width: min(200px, 40%);
     height: 1px;
-    margin: 24px 0 18px;
-    background: linear-gradient(90deg, #d7d9dd 0%, rgba(215, 217, 221, 0) 100%);
+    margin: 32px 0 28px;
+    background: linear-gradient(90deg, var(--border) 0%, rgba(231, 232, 234, 0) 100%);
 }
 
+/* ─── Eyebrow / section heading ────────────────────────────── */
 .home-card-eyebrow {
-    margin-bottom: 10px;
-    font-size: 0.72rem;
+    margin-bottom: 8px;
+    font-size: 0.68rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--text-secondary);
 }
 
 .home-card-title {
-    margin-bottom: 14px;
-    font-size: 1.15rem;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--text-primary);
 }
 
-.home-card-copy {
-    font-size: 0.95rem;
-    line-height: 1.7;
+/* ─── Feature cards grid (right column of hero) ────────────── */
+.home-features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-content: start;
+}
+
+.home-feature-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+    animation: home-fade-in .4s ease both;
+}
+
+.home-feature-card:hover {
+    box-shadow: 0 6px 20px rgba(15, 18, 24, .07);
+    transform: translateY(-2px);
+    border-color: #d0d2d6;
+}
+
+.home-feature-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--accent-light);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+
+.home-feature-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.home-feature-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+}
+
+.home-feature-desc {
+    font-size: 0.78rem;
+    line-height: 1.5;
     color: var(--text-secondary);
 }
 
+/* ─── Steps ────────────────────────────────────────────────── */
 .home-steps {
-    padding-left: 1.1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: step;
     display: grid;
     gap: 12px;
-    color: var(--text-secondary);
-    line-height: 1.65;
-    max-width: 58ch;
+    width: 100%;
 }
 
-.home-steps li::marker {
-    color: var(--text-primary);
+.home-steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.home-steps li:hover {
+    border-color: #cfd1d5;
+    background: var(--bg);
+}
+
+.home-steps li::before {
+    content: counter(step);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
     font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 @media (max-width: 980px) {
-    .home-title {
-        max-width: none;
+    /* Hero stacks vertically: lead on top, feature cards below */
+    .home-hero {
+        grid-template-columns: 1fr;
+    }
+    .home-features {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 620px) {
+    .home-features {
+        grid-template-columns: 1fr;
     }
 }
 

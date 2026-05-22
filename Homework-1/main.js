@@ -6,6 +6,23 @@ const homeTemplate = document.getElementById('view-home-template');
 const messageTemplate = document.getElementById('view-message-template');
 const loadingTemplate = document.getElementById('view-loading-template');
 
+// ─── Custom select sync ────────────────────────────────────────
+const userSelect = document.getElementById('user-selection');
+const selectWrapper = userSelect ? userSelect.closest('.custom-select-wrapper') : null;
+const selectValueEl = selectWrapper ? selectWrapper.querySelector('.custom-select-value') : null;
+
+function syncCustomSelect() {
+    if (!userSelect || !selectWrapper || !selectValueEl) return;
+    const selected = userSelect.options[userSelect.selectedIndex];
+    selectValueEl.textContent = selected ? selected.text : '';
+    selectWrapper.classList.toggle('is-placeholder', !userSelect.value);
+}
+
+if (userSelect) {
+    userSelect.addEventListener('change', syncCustomSelect);
+    syncCustomSelect(); // stato iniziale
+}
+
 function findNavItemByRoute(route) {
     return navItems.find(item => item.dataset.route === route) || navItems[0];
 }
@@ -67,6 +84,7 @@ async function activateRoute(route, options = {}) {
     const action = item.dataset.action || '';
 
     centerTitle.textContent = title;
+    centerTitle.classList.toggle('center-title--hidden', item.dataset.route === 'home');
     updateActiveNav(item);
     updateBrowserUrl(item, replaceState);
 
@@ -90,6 +108,15 @@ navItems.forEach(item => {
         event.preventDefault();
         activateRoute(item.dataset.route);
     });
+});
+
+// Delegate clicks for CTA buttons injected via templates (e.g. home page CTAs)
+centerContent.addEventListener('click', event => {
+    const cta = event.target.closest('[data-route]');
+    if (cta && !cta.closest('#nav-panel')) {
+        event.preventDefault();
+        activateRoute(cta.dataset.route);
+    }
 });
 
 window.addEventListener('popstate', event => {
