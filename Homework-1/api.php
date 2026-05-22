@@ -5,10 +5,18 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
-function send_json_response(int $httpStatus, string $status, string $message, $data = null): never
+$databaseSettings = [
+    'host' => 'localhost',
+    'port' => 3306,
+    'dbname' => 'quiz_db', // Sostituisci con il nome che hai scelto al punto 1, se diverso
+    'username' => 'root',  // Su XAMPP l'utente predefinito è sempre 'root'
+    'password' => '',      // Su XAMPP la password va lasciata vuota
+    'charset' => 'utf8mb4'
+];
+
+function respond(int $httpStatus, string $status, string $message, $data = null)
 {
     http_response_code($httpStatus);
-
     echo json_encode(
         [
             'status' => $status,
@@ -17,62 +25,225 @@ function send_json_response(int $httpStatus, string $status, string $message, $d
         ],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
     );
-
     exit;
 }
 
-function get_json_input(): array
+function request_data(): array
 {
-    $rawInput = file_get_contents('php://input');
+    $json = json_decode((string) file_get_contents('php://input'), true);
+    return array_merge($_GET, $_POST, is_array($json) ? $json : []);
+}
 
-    if ($rawInput === false || trim($rawInput) === '') {
-        return [];
+function param_string(array $data, string $key, string $default = ''): string
+{
+    return isset($data[$key]) ? trim((string) $data[$key]) : $default;
+}
+
+function param_limit(array $data, int $default = 25): int
+{
+    $limit = isset($data['limit']) ? (int) $data['limit'] : $default;
+    return max(1, min($limit, 100));
+}
+
+function db(): PDO
+{
+    static $pdo = null;
+
+    if ($pdo instanceof PDO) {
+        return $pdo;
     }
 
-    $decodedInput = json_decode($rawInput, true);
+    global $databaseSettings;
 
-    return is_array($decodedInput) ? $decodedInput : [];
-}
+    if (
+        $databaseSettings['dbname'] === 'CHANGE_ME' ||
+        $databaseSettings['username'] === 'CHANGE_ME'
+    ) {
+        respond(500, 'error', 'Inserisci le credenziali MySQL direttamente in api.php.', null);
+    }
 
-$requestData = array_merge($_GET, $_POST, get_json_input());
-$action = isset($requestData['action']) ? trim((string) $requestData['action']) : '';
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+        $databaseSettings['host'],
+        (int) $databaseSettings['port'],
+        $databaseSettings['dbname'],
+        $databaseSettings['charset']
+    );
 
-if ($action === '') {
-    send_json_response(400, 'error', 'Parametro action mancante.', null);
-}
-
-// Qui potrai includere il file di connessione al database, per esempio:
-// require_once __DIR__ . '/config/database.php';
-
-switch ($action) {
-    case 'home':
-        send_json_response(200, 'success', 'Sezione Home caricata correttamente.', null);
-        break;
-
-    case 'search_users':
-    case 'search_quizzes':
-    case 'search_participations':
-    case 'manage_users':
-    case 'create_user':
-    case 'read_user':
-    case 'update_user':
-    case 'delete_user':
-        send_json_response(501, 'error', 'Sezione non ancora implementata.', null);
-        break;
-
-    case 'health':
-        send_json_response(
-            200,
-            'success',
-            'API raggiungibile.',
+    try {
+        $pdo = new PDO(
+            $dsn,
+            (string) $databaseSettings['username'],
+            (string) $databaseSettings['password'],
             [
-                'timestamp' => date(DATE_ATOM),
-                'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false
             ]
         );
-        break;
+    } catch (PDOException $exception) {
+        respond(500, 'error', 'Connessione al database fallita: ' . $exception->getMessage(), null);
+    }
 
-    default:
-        send_json_response(400, 'error', 'Azione non valida.', null);
-        break;
+    return $pdo;
+}
+
+function fetch_usernames(int $limit): array
+{
+    $statement = db()->query(
+        'SELECT nomeUtente FROM Utente ORDER BY nomeUtente ASC LIMIT ' . $limit
+    );
+
+    return $statement->fetchAll();
+}
+
+function fetch_users(string $search, int $limit): array
+{
+    $statement = db()->prepare(
+        '
+        SELECT nomeUtente, nome, cognome, email
+        FROM Utente
+        WHERE
+            :search = ""
+            OR nomeUtente LIKE :searchLike
+            OR nome LIKE :searchLike
+            OR cognome LIKE :searchLike
+            OR email LIKE :searchLike
+        ORDER BY cognome ASC, nome ASC
+        LIMIT ' . $limit
+    );
+
+    $statement->execute([
+        'search' => $search,
+        'searchLike' => '%' . $search . '%'
+    ]);
+
+    return $statement->fetchAll();
+}
+
+function fetch_quizzes(string $search, int $limit): array
+{
+    $statement = db()->prepare(
+        '
+        SELECT
+            q.codice,
+            q.titolo,
+            q.creatore,
+            q.dataInizio,
+            q.dataFine,
+            COUNT(d.numero) AS numeroDomande
+        FROM Quiz q
+        LEFT JOIN Domanda d ON d.quiz = q.codice
+        WHERE
+            :search = ""
+            OR q.titolo LIKE :searchLike
+            OR q.creatore LIKE :searchLike
+            OR CAST(q.codice AS CHAR) LIKE :searchLike
+        GROUP BY q.codice, q.titolo, q.creatore, q.dataInizio, q.dataFine
+        ORDER BY q.codice DESC
+        LIMIT ' . $limit
+    );
+
+    $statement->execute([
+        'search' => $search,
+        'searchLike' => '%' . $search . '%'
+    ]);
+
+    return $statement->fetchAll();
+}
+
+function fetch_participations(string $search, int $limit): array
+{
+    $statement = db()->prepare(
+        '
+        SELECT
+            p.codice,
+            p.utente,
+            p.quiz,
+            q.titolo AS titoloQuiz,
+            p.data
+        FROM Partecipazione p
+        INNER JOIN Quiz q ON q.codice = p.quiz
+        WHERE
+            :search = ""
+            OR p.utente LIKE :searchLike
+            OR q.titolo LIKE :searchLike
+            OR CAST(p.quiz AS CHAR) LIKE :searchLike
+        ORDER BY p.data DESC, p.codice DESC
+        LIMIT ' . $limit
+    );
+
+    $statement->execute([
+        'search' => $search,
+        'searchLike' => '%' . $search . '%'
+    ]);
+
+    return $statement->fetchAll();
+}
+
+$requestData = request_data();
+$action = param_string($requestData, 'action');
+
+if ($action === '') {
+    respond(400, 'error', 'Parametro action mancante.', null);
+}
+
+try {
+    switch ($action) {
+        case 'home':
+            respond(200, 'success', 'Sezione Home caricata correttamente.', null);
+            break;
+
+        case 'list_usernames':
+            $limit = param_limit($requestData, 100);
+            respond(
+                200,
+                'success',
+                'Elenco utenti caricato correttamente.',
+                ['items' => fetch_usernames($limit)]
+            );
+            break;
+
+        case 'search_users':
+        case 'manage_users':
+            $search = param_string($requestData, 'q');
+            $limit = param_limit($requestData, 25);
+            respond(
+                200,
+                'success',
+                'Utenti caricati correttamente.',
+                ['items' => fetch_users($search, $limit)]
+            );
+            break;
+
+        case 'search_quizzes':
+            $search = param_string($requestData, 'q');
+            $limit = param_limit($requestData, 25);
+            respond(
+                200,
+                'success',
+                'Quiz caricati correttamente.',
+                ['items' => fetch_quizzes($search, $limit)]
+            );
+            break;
+
+        case 'search_participations':
+            $search = param_string($requestData, 'q');
+            $limit = param_limit($requestData, 25);
+            respond(
+                200,
+                'success',
+                'Partecipazioni caricate correttamente.',
+                ['items' => fetch_participations($search, $limit)]
+            );
+            break;
+
+        default:
+            respond(400, 'error', 'Azione non valida.', null);
+            break;
+    }
+} catch (PDOException $exception) {
+    respond(500, 'error', 'Errore database: ' . $exception->getMessage(), null);
+} catch (Throwable $exception) {
+    respond(500, 'error', 'Errore interno: ' . $exception->getMessage(), null);
 }

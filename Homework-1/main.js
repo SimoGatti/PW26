@@ -6,13 +6,51 @@ const homeTemplate = document.getElementById('view-home-template');
 const messageTemplate = document.getElementById('view-message-template');
 const loadingTemplate = document.getElementById('view-loading-template');
 
-// ─── Custom select sync ────────────────────────────────────────
 const userSelect = document.getElementById('user-selection');
 const selectWrapper = userSelect ? userSelect.closest('.custom-select-wrapper') : null;
 const selectValueEl = selectWrapper ? selectWrapper.querySelector('.custom-select-value') : null;
 
+function setUserSelectOptions(options, selectedValue = '') {
+    if (!userSelect) return;
+
+    userSelect.replaceChildren();
+
+    options.forEach(optionData => {
+        const option = document.createElement('option');
+        option.value = optionData.value;
+        option.textContent = optionData.label;
+
+        if (optionData.value === selectedValue) {
+            option.selected = true;
+        }
+
+        userSelect.appendChild(option);
+    });
+
+    syncCustomSelect();
+}
+
+function setUserSelectLoadingState() {
+    if (!userSelect) return;
+
+    userSelect.disabled = true;
+    setUserSelectOptions([
+        { value: '', label: 'Caricamento utenti...' }
+    ]);
+}
+
+function setUserSelectErrorState(message) {
+    if (!userSelect) return;
+
+    userSelect.disabled = true;
+    setUserSelectOptions([
+        { value: '', label: message }
+    ]);
+}
+
 function syncCustomSelect() {
     if (!userSelect || !selectWrapper || !selectValueEl) return;
+
     const selected = userSelect.options[userSelect.selectedIndex];
     selectValueEl.textContent = selected ? selected.text : '';
     selectWrapper.classList.toggle('is-placeholder', !userSelect.value);
@@ -20,7 +58,38 @@ function syncCustomSelect() {
 
 if (userSelect) {
     userSelect.addEventListener('change', syncCustomSelect);
-    syncCustomSelect(); // stato iniziale
+    syncCustomSelect();
+}
+
+async function loadUserOptions() {
+    if (!userSelect) return;
+
+    setUserSelectLoadingState();
+
+    try {
+        const payload = await fetchSectionData('list_usernames', { limit: 100 });
+        const users = Array.isArray(payload.data && payload.data.items) ? payload.data.items : [];
+
+        if (users.length === 0) {
+            userSelect.disabled = true;
+            setUserSelectOptions([
+                { value: '', label: 'Nessun utente disponibile' }
+            ]);
+            return;
+        }
+
+        const options = [{ value: '', label: '- Nessun utente -' }].concat(
+            users.map(user => ({
+                value: user.nomeUtente,
+                label: user.nomeUtente
+            }))
+        );
+
+        userSelect.disabled = false;
+        setUserSelectOptions(options);
+    } catch (error) {
+        setUserSelectErrorState('Utenti non disponibili');
+    }
 }
 
 function findNavItemByRoute(route) {
@@ -56,9 +125,13 @@ function updateBrowserUrl(item, replaceState = false) {
     window.history[method]({ route: item.dataset.route }, '', item.getAttribute('href'));
 }
 
-async function fetchSectionData(action) {
+async function fetchSectionData(action, extraParams = {}) {
     const apiUrl = new URL('api.php', window.location.href);
     apiUrl.searchParams.set('action', action);
+
+    Object.entries(extraParams).forEach(([key, value]) => {
+        apiUrl.searchParams.set(key, String(value));
+    });
 
     const response = await fetch(apiUrl.toString(), {
         method: 'GET',
@@ -110,9 +183,9 @@ navItems.forEach(item => {
     });
 });
 
-// Delegate clicks for CTA buttons injected via templates (e.g. home page CTAs)
 centerContent.addEventListener('click', event => {
     const cta = event.target.closest('[data-route]');
+
     if (cta && !cta.closest('#nav-panel')) {
         event.preventDefault();
         activateRoute(cta.dataset.route);
@@ -141,3 +214,4 @@ new ResizeObserver(() => applyNavMode()).observe(navPanel);
 const initialRoute = new URL(window.location.href).searchParams.get('view') || 'home';
 activateRoute(initialRoute, { replaceState: true });
 applyNavMode();
+loadUserOptions();
