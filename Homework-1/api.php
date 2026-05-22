@@ -4,6 +4,21 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+const DB_HOST = 'localhost';
+const DB_PORT = 3306;
+const DB_NAME = 'my_namenotfound';
+const DB_USER = 'namenotfound';
+const DB_PASS = 'EG8F728v7eA4';
+const DB_CHARSET = 'utf8mb4';
 
 function respond(int $httpStatus, string $status, string $message, $data = null)
 {
@@ -19,8 +34,35 @@ function respond(int $httpStatus, string $status, string $message, $data = null)
     exit;
 }
 
-// Carica la configurazione centralizzata (CORS, ENV e Database Connection)
-require_once __DIR__ . '/config/database.php';
+function db(): PDO
+{
+    static $pdo = null;
+
+    if ($pdo instanceof PDO) {
+        return $pdo;
+    }
+
+    $dsn = sprintf(
+        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
+        DB_HOST,
+        DB_PORT,
+        DB_NAME,
+        DB_CHARSET
+    );
+
+    $pdo = new PDO(
+        $dsn,
+        DB_USER,
+        DB_PASS,
+        [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        ]
+    );
+
+    return $pdo;
+}
 
 function request_data(): array
 {
@@ -150,8 +192,7 @@ try {
             respond(200, 'success', 'Statistiche caricate.', [
                 'quiz_count'     => (int) $quizCount,
                 'question_count' => (int) $questionCount,
-                'user_count'     => (int) $userCount,
-                'mode'           => USE_ALTERVISTA_DB ? 'ALTERVISTA' : 'LOCAL'
+                'user_count'     => (int) $userCount
             ]);
             break;
 

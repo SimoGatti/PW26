@@ -1,3 +1,5 @@
+const API_URL = 'https://namenotfound.altervista.org/api.php';
+
 const centerTitle = document.getElementById('center-title');
 const centerContent = document.getElementById('center-content');
 const navPanel = document.getElementById('nav-panel');
@@ -126,9 +128,7 @@ function updateBrowserUrl(item, replaceState = false) {
 }
 
 async function fetchSectionData(action, extraParams = {}) {
-    const apiUrl = CONFIG.remoteApiUrl
-        ? new URL(CONFIG.remoteApiUrl)
-        : new URL('api.php', window.location.href);
+    const apiUrl = new URL(API_URL);
     apiUrl.searchParams.set('action', action);
 
     Object.entries(extraParams).forEach(([key, value]) => {
