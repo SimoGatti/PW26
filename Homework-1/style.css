@@ -14,27 +14,28 @@
 
 /* ─── Design Tokens ───────────────────────────────────────────── */
 :root {
-    --bg:              #f6f7f8;
-    --surface:         #ffffff;
-    --surface-raised:  #fcfcfc;
-    --border:          #e7e8ea;
-    --text-primary:    #17181a;
-    --text-secondary:  #5e6168;
-    --accent:          #202226;
-    --accent-light:    #f1f2f4;
-    --radius-sm:       8px;
-    --radius-md:       16px;
-    --radius-lg:       22px;
-    --shadow-sm:       0 10px 30px rgba(15, 18, 24, .04);
-    --shadow-md:       0 18px 50px rgba(15, 18, 24, .08);
-    --header-height:   72px;
-    --footer-height:   80px;
-    --outer-gap:       14px;
-    --panel-gap:       10px;
+    --bg: #f6f7f8;
+    --surface: #ffffff;
+    --surface-raised: #fcfcfc;
+    --border: #e7e8ea;
+    --text-primary: #17181a;
+    --text-secondary: #5e6168;
+    --accent: #202226;
+    --accent-light: #f1f2f4;
+    --radius-sm: 8px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --shadow-sm: 0 10px 30px rgba(15, 18, 24, .04);
+    --shadow-md: 0 18px 50px rgba(15, 18, 24, .08);
+    --header-height: 72px;
+    --footer-height: 80px;
+    --outer-gap: 14px;
+    --panel-gap: 10px;
 }
 
 /* ─── Base ────────────────────────────────────────────────────── */
-html, body {
+html,
+body {
     height: 100%;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -62,8 +63,10 @@ header {
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
-    overflow: hidden;        /* non sfora mai la riga del grid */
-    flex-shrink: 0;           /* non si restringe su zoom */
+    overflow: hidden;
+    /* non sfora mai la riga del grid */
+    flex-shrink: 0;
+    /* non si restringe su zoom */
 }
 
 .header-title {
@@ -87,7 +90,8 @@ header {
     display: grid;
     grid-template-columns: 1.35fr minmax(0, 5.15fr) 1.5fr;
     min-height: 0;
-    min-width: 0;             /* evita overflow celle grid */
+    min-width: 0;
+    /* evita overflow celle grid */
     overflow: hidden;
     gap: var(--panel-gap);
 }
@@ -106,7 +110,8 @@ header {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    min-width: 0;             /* evita overflow nelle celle grid */
+    min-width: 0;
+    /* evita overflow nelle celle grid */
     transition: box-shadow .2s ease;
 }
 
@@ -143,13 +148,16 @@ header {
 .panel-body::-webkit-scrollbar {
     width: 5px;
 }
+
 .panel-body::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .panel-body::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 99px;
 }
+
 .panel-body::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
 }
@@ -299,8 +307,15 @@ h2 {
 }
 
 @keyframes home-fade-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ─── Home hero (two-column grid) ───────────────────────────── */
@@ -317,7 +332,8 @@ h2 {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding-top: 6px;   /* align optically with card tops */
+    padding-top: 6px;
+    /* align optically with card tops */
 }
 
 .home-title {
@@ -514,11 +530,69 @@ h2 {
     flex-shrink: 0;
 }
 
+/* ─── Compact Stats on Home Hero ─────────────────────────── */
+.home-stats-compact {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 20px 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+    transition: box-shadow .2s ease, border-color .2s ease;
+    animation: home-fade-in .5s .10s ease both;
+}
+
+.home-stats-compact:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #c4c6ca;
+}
+
+.stat-compact-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    transition: background .2s ease;
+}
+
+.stat-compact-item:hover {
+    background: var(--bg);
+}
+
+.stat-compact-item:not(:last-child) {
+    border-right: 1px solid var(--border);
+}
+
+.stat-compact-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+}
+
+.stat-compact-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
 @media (max-width: 980px) {
+
     /* Hero stacks vertically: lead on top, feature cards below */
     .home-hero {
         grid-template-columns: 1fr;
     }
+
     .home-features {
         grid-template-columns: 1fr 1fr;
     }
@@ -542,8 +616,10 @@ footer {
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     padding-inline: 20px;
-    overflow: hidden;        /* non sfora mai la riga del grid */
-    flex-shrink: 0;           /* non si restringe su zoom */
+    overflow: hidden;
+    /* non sfora mai la riga del grid */
+    flex-shrink: 0;
+    /* non si restringe su zoom */
     min-height: var(--footer-height);
 }
 
@@ -615,8 +691,8 @@ footer {
     transition: opacity .15s ease;
 }
 
-.nav-item:hover   .nav-icon,
-.nav-item.active  .nav-icon {
+.nav-item:hover .nav-icon,
+.nav-item.active .nav-icon {
     opacity: 1;
 }
 
@@ -644,6 +720,6 @@ footer {
 }
 
 #nav-panel.icon-only .nav-item.active .nav-icon,
-#nav-panel.icon-only .nav-item:hover  .nav-icon {
+#nav-panel.icon-only .nav-item:hover .nav-icon {
     opacity: 1;
 }
