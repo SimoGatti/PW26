@@ -126,7 +126,9 @@ function updateBrowserUrl(item, replaceState = false) {
 }
 
 async function fetchSectionData(action, extraParams = {}) {
-    const apiUrl = new URL('api.php', window.location.href);
+    const apiUrl = CONFIG.useRemoteApi
+        ? new URL(CONFIG.remoteApiUrl)
+        : new URL('api.php', window.location.href);
     apiUrl.searchParams.set('action', action);
 
     Object.entries(extraParams).forEach(([key, value]) => {
@@ -163,6 +165,22 @@ async function activateRoute(route, options = {}) {
 
     if (item.dataset.route === 'home') {
         renderHomeView();
+        // Carica in background le statistiche reali o mock dal server
+        fetchSectionData('home')
+            .then(payload => {
+                if (payload.data) {
+                    const quizEl = document.getElementById('stat-quiz');
+                    const questionsEl = document.getElementById('stat-questions');
+                    const usersEl = document.getElementById('stat-users');
+                    
+                    if (quizEl) quizEl.textContent = payload.data.quiz_count;
+                    if (questionsEl) questionsEl.textContent = payload.data.question_count;
+                    if (usersEl) usersEl.textContent = payload.data.user_count;
+                }
+            })
+            .catch(error => {
+                console.warn("Impossibile caricare le statistiche reali:", error);
+            });
         return;
     }
 

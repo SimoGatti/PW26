@@ -5,15 +5,6 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
-$databaseSettings = [
-    'host' => 'localhost',
-    'port' => 3306,
-    'dbname' => 'quiz_db', // Sostituisci con il nome che hai scelto al punto 1, se diverso
-    'username' => 'root',  // Su XAMPP l'utente predefinito è sempre 'root'
-    'password' => '',      // Su XAMPP la password va lasciata vuota
-    'charset' => 'utf8mb4'
-];
-
 function respond(int $httpStatus, string $status, string $message, $data = null)
 {
     http_response_code($httpStatus);
@@ -27,6 +18,9 @@ function respond(int $httpStatus, string $status, string $message, $data = null)
     );
     exit;
 }
+
+// Carica la configurazione centralizzata (CORS, ENV e Database Connection)
+require_once __DIR__ . '/config/database.php';
 
 function request_data(): array
 {
@@ -43,49 +37,6 @@ function param_limit(array $data, int $default = 25): int
 {
     $limit = isset($data['limit']) ? (int) $data['limit'] : $default;
     return max(1, min($limit, 100));
-}
-
-function db(): PDO
-{
-    static $pdo = null;
-
-    if ($pdo instanceof PDO) {
-        return $pdo;
-    }
-
-    global $databaseSettings;
-
-    if (
-        $databaseSettings['dbname'] === 'CHANGE_ME' ||
-        $databaseSettings['username'] === 'CHANGE_ME'
-    ) {
-        respond(500, 'error', 'Inserisci le credenziali MySQL direttamente in api.php.', null);
-    }
-
-    $dsn = sprintf(
-        'mysql:host=%s;port=%d;dbname=%s;charset=%s',
-        $databaseSettings['host'],
-        (int) $databaseSettings['port'],
-        $databaseSettings['dbname'],
-        $databaseSettings['charset']
-    );
-
-    try {
-        $pdo = new PDO(
-            $dsn,
-            (string) $databaseSettings['username'],
-            (string) $databaseSettings['password'],
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            ]
-        );
-    } catch (PDOException $exception) {
-        respond(500, 'error', 'Connessione al database fallita: ' . $exception->getMessage(), null);
-    }
-
-    return $pdo;
 }
 
 function fetch_usernames(int $limit): array
@@ -191,7 +142,35 @@ if ($action === '') {
 try {
     switch ($action) {
         case 'home':
-            respond(200, 'success', 'Sezione Home caricata correttamente.', null);
+            try {
+                // Tenta di connettersi al database (locale o AlterVista a seconda del flag)
+                $pdo = db();
+                
+                // Raccogliamo i conteggi reali dalle tabelle del database
+                $stmtQuiz = $pdo->query("SELECT COUNT(*) as cnt FROM `Quiz`");
+                $quizCount = $stmtQuiz ? ($stmtQuiz->fetch()['cnt'] ?? 0) : 0;
+
+                $stmtDomanda = $pdo->query("SELECT COUNT(*) as cnt FROM `Domanda`");
+                $questionCount = $stmtDomanda ? ($stmtDomanda->fetch()['cnt'] ?? 0) : 0;
+
+                $stmtUtente = $pdo->query("SELECT COUNT(*) as cnt FROM `Utente`");
+                $userCount = $stmtUtente ? ($stmtUtente->fetch()['cnt'] ?? 0) : 0;
+
+                respond(200, 'success', 'Dati reali caricati correttamente.', [
+                    'quiz_count' => (int) $quizCount,
+                    'question_count' => (int) $questionCount,
+                    'user_count' => (int) $userCount,
+                    'mode' => USE_ALTERVISTA_DB ? 'ALTERVISTA' : 'LOCAL'
+                ]);
+            } catch (Throwable $exception) {
+                // Fallback elegante su dati Mock se il database non è connesso o le tabelle non sono create
+                respond(200, 'success', 'Caricamento da database non disponibile (' . $exception->getMessage() . '). Dati simulati caricati.', [
+                    'quiz_count' => 12,
+                    'question_count' => 250,
+                    'user_count' => 3,
+                    'mode' => 'MOCK'
+                ]);
+            }
             break;
 
         case 'list_usernames':
