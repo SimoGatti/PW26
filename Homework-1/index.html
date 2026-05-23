@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="it">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="main.js" defer></script>
 </head>
-
 <body>
-
     <header class="surface-block">
         <div class="header-title">QUIZZING</div>
         <div class="header-subtitle">Metti alla prova le tue conoscenze</div>
@@ -20,29 +17,21 @@
         <aside class="panel left">
             <div class="panel-body">
                 <div class="user-selection-container">
-                    <h2>Seleziona Utente</h2>
+                    <h2>Utente Attivo:</h2>
                     <div class="custom-select-wrapper">
-                        <!-- Select nativo wrappato: gestisce valore, onChange, accessibilità. Stile coerente -->
-                        <select name="user-selection" id="user-selection" class="custom-select-native">
-                            <option value="">— Nessun utente —</option>
-                            <option value="1">Utente 1</option>
-                            <option value="2">Utente 2</option>
-                            <option value="3">Utente 3</option>
-                        </select>
-                        <!-- Layer visivo custom -->
+                        <select name="user-selection" id="user-selection" class="custom-select-native"></select>
                         <div class="custom-select-trigger" aria-hidden="true">
-                            <span class="custom-select-value">— Nessun utente —</span>
-                            <svg class="custom-select-chevron" viewBox="0 0 16 16" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
+                            <span class="custom-select-value">— Non Selezionato —</span>
+                            <svg class="custom-select-chevron" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
                                     stroke-linejoin="round" />
                             </svg>
                         </div>
-                    </div> <!-- custom-select-wrapper -->
+                    </div>
                 </div>
+
                 <div class="filter-container">
                     <h2>Filtri</h2>
-                    <!-- I filtri vengono iniettati via JS in base alla pagina attiva -->
                 </div>
             </div>
         </aside>
@@ -55,20 +44,15 @@
 
             <template id="view-home-template">
                 <article class="home-card">
-
-                    <!-- Hero (due colonne: titolo a sinistra / feature cards a destra) -->
-                    <!-- Disposizione e titolo migliorabili -->
                     <div class="home-hero">
-
                         <div class="home-hero-lead">
                             <h3 class="home-title">Allenati,<br>esplora e<br>affronta i quiz.</h3>
-                            <p class="home-subtitle">Scegli un utente, naviga tra le sezioni e metti alla prova le tue
-                                conoscenze con migliaia di domande.</p>
+                            <p class="home-subtitle">
+                                Scegli un utente, naviga tra le sezioni e metti alla prova le tue conoscenze con migliaia di domande.
+                            </p>
                             <div class="home-cta-row">
-                                <a class="home-cta-primary" href="?view=ricerca-quiz" data-route="ricerca-quiz">Esplora
-                                    Quiz →</a>
-                                <a class="home-cta-secondary" href="?view=ricerca-utenti"
-                                    data-route="ricerca-utenti">Ricerca Utenti</a>
+                                <a class="home-cta-primary" href="?view=ricerca-quiz" data-route="ricerca-quiz">Esplora Quiz →</a>
+                                <a class="home-cta-secondary" href="?view=ricerca-utenti" data-route="ricerca-utenti">Ricerca Utenti</a>
                             </div>
                         </div>
 
@@ -90,7 +74,6 @@
 
                     <div class="home-divider"></div>
 
-                    <!-- Guida per l'uso -->
                     <p class="home-card-eyebrow">Come iniziare</p>
                     <h4 class="home-card-title">Tre passi per cominciare</h4>
                     <ol class="home-steps">
@@ -116,30 +99,30 @@
 
         <aside class="panel right">
             <nav class="panel-body" id="nav-panel" aria-label="Navigazione principale">
-                <a class="nav-item active" href="?view=home" data-route="home" data-title="Home" data-action="home"
-                    title="Home">
+                <a class="nav-item active" href="?view=home" data-route="home" data-title="Home" data-action="home" title="Home">
                     <img class="nav-icon" src="assets/home.svg" alt="">
                     <span class="nav-label">Home</span>
                 </a>
-                <a class="nav-item" href="?view=ricerca-utenti" data-route="ricerca-utenti" data-title="Ricerca Utenti"
-                    data-action="search_users" title="Ricerca Utenti">
+
+                <a class="nav-item" href="?view=ricerca-utenti" data-route="ricerca-utenti" data-title="Ricerca Utenti" data-action="search_users" title="Ricerca Utenti">
                     <img class="nav-icon" src="assets/utenti.svg" alt="">
                     <span class="nav-label">Ricerca Utenti</span>
                 </a>
-                <a class="nav-item" href="?view=ricerca-quiz" data-route="ricerca-quiz" data-title="Ricerca Quiz"
-                    data-action="search_quizzes" title="Ricerca Quiz">
+
+                <a class="nav-item" href="?view=ricerca-quiz" data-route="ricerca-quiz" data-title="Ricerca Quiz" data-action="search_quizzes" title="Ricerca Quiz">
                     <img class="nav-icon" src="assets/quiz.svg" alt="">
                     <span class="nav-label">Ricerca Quiz</span>
                 </a>
+
                 <a class="nav-item" href="?view=ricerca-partecipazioni" data-route="ricerca-partecipazioni"
-                    data-title="Ricerca Partecipazioni" data-action="search_participations"
-                    title="Ricerca Partecipazioni">
+                    data-title="Ricerca Partecipazioni" data-action="search_participations" title="Ricerca Partecipazioni">
                     <img class="nav-icon" src="assets/partecipazioni.svg" alt="">
                     <span class="nav-label">Ricerca Partecipazioni</span>
                 </a>
+
                 <hr class="nav-separator">
-                <a class="nav-item" href="?view=gestione-utenti" data-route="gestione-utenti"
-                    data-title="Gestione Utenti" data-action="manage_users" title="Gestione Utenti">
+
+                <a class="nav-item" href="?view=gestione-utenti" data-route="gestione-utenti" data-title="Gestione Utenti" data-action="manage_users" title="Gestione Utenti">
                     <img class="nav-icon" src="assets/gestione.svg" alt="">
                     <span class="nav-label">Gestione Utenti</span>
                 </a>
@@ -149,10 +132,9 @@
 
     <footer class="surface-block">
         <div class="footer-title">DISCLAIMER : Questo sito è stato creato con fini accademici.</div>
-        <div class="footer-subtitle">Tutti i contenuti e le informazioni presenti su questo sito sono fittizi e creati
-            esclusivamente per scopi di esercitazione e apprendimento.</div>
+        <div class="footer-subtitle">
+            Tutti i contenuti e le informazioni presenti su questo sito sono fittizi e creati esclusivamente per scopi di esercitazione e apprendimento.
+        </div>
     </footer>
-
 </body>
-
 </html>

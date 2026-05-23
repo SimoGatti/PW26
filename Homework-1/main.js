@@ -1,123 +1,51 @@
 const API_URL = 'https://namenotfound.altervista.org/api.php';
 
-const centerTitle = document.getElementById('center-title');
-const centerContent = document.getElementById('center-content');
-const navPanel = document.getElementById('nav-panel');
-const navItems = Array.from(document.querySelectorAll('#nav-panel .nav-item'));
-const homeTemplate = document.getElementById('view-home-template');
-const messageTemplate = document.getElementById('view-message-template');
-const loadingTemplate = document.getElementById('view-loading-template');
+const elements = {
+    centerTitle: document.getElementById('center-title'),
+    centerContent: document.getElementById('center-content'),
+    navPanel: document.getElementById('nav-panel'),
+    navItems: Array.from(document.querySelectorAll('#nav-panel .nav-item')),
+    templates: {
+        home: document.getElementById('view-home-template'),
+        message: document.getElementById('view-message-template'),
+        loading: document.getElementById('view-loading-template')
+    },
+    userSelect: document.getElementById('user-selection')
+};
 
-const userSelect = document.getElementById('user-selection');
-const selectWrapper = userSelect ? userSelect.closest('.custom-select-wrapper') : null;
-const selectValueEl = selectWrapper ? selectWrapper.querySelector('.custom-select-value') : null;
+const userSelectUi = {
+    wrapper: elements.userSelect ? elements.userSelect.closest('.custom-select-wrapper') : null,
+    value: null
+};
 
-function setUserSelectOptions(options, selectedValue = '') {
-    if (!userSelect) return;
-
-    userSelect.replaceChildren();
-
-    options.forEach(optionData => {
-        const option = document.createElement('option');
-        option.value = optionData.value;
-        option.textContent = optionData.label;
-
-        if (optionData.value === selectedValue) {
-            option.selected = true;
-        }
-
-        userSelect.appendChild(option);
-    });
-
-    syncCustomSelect();
-}
-
-function setUserSelectLoadingState() {
-    if (!userSelect) return;
-
-    userSelect.disabled = true;
-    setUserSelectOptions([
-        { value: '', label: 'Caricamento utenti...' }
-    ]);
-}
-
-function setUserSelectErrorState(message) {
-    if (!userSelect) return;
-
-    userSelect.disabled = true;
-    setUserSelectOptions([
-        { value: '', label: message }
-    ]);
-}
-
-function syncCustomSelect() {
-    if (!userSelect || !selectWrapper || !selectValueEl) return;
-
-    const selected = userSelect.options[userSelect.selectedIndex];
-    selectValueEl.textContent = selected ? selected.text : '';
-    selectWrapper.classList.toggle('is-placeholder', !userSelect.value);
-}
-
-if (userSelect) {
-    userSelect.addEventListener('change', syncCustomSelect);
-    syncCustomSelect();
-}
-
-async function loadUserOptions() {
-    if (!userSelect) return;
-
-    setUserSelectLoadingState();
-
-    try {
-        const payload = await fetchSectionData('list_usernames', { limit: 100 });
-        const users = Array.isArray(payload.data && payload.data.items) ? payload.data.items : [];
-
-        if (users.length === 0) {
-            userSelect.disabled = true;
-            setUserSelectOptions([
-                { value: '', label: 'Nessun utente disponibile' }
-            ]);
-            return;
-        }
-
-        const options = [{ value: '', label: '- Nessun utente -' }].concat(
-            users.map(user => ({
-                value: user.nomeUtente,
-                label: user.nomeUtente
-            }))
-        );
-
-        userSelect.disabled = false;
-        setUserSelectOptions(options);
-    } catch (error) {
-        setUserSelectErrorState('Utenti non disponibili');
-    }
-}
-
-function findNavItemByRoute(route) {
-    return navItems.find(item => item.dataset.route === route) || navItems[0];
+if (userSelectUi.wrapper) {
+    userSelectUi.value = userSelectUi.wrapper.querySelector('.custom-select-value');
 }
 
 function cloneTemplate(template) {
     return template.content.cloneNode(true);
 }
 
-function renderHomeView() {
-    centerContent.replaceChildren(cloneTemplate(homeTemplate));
+function findNavItemByRoute(route) {
+    return elements.navItems.find(item => item.dataset.route === route) || elements.navItems[0];
 }
 
-function renderMessageView(message) {
-    const fragment = cloneTemplate(messageTemplate);
-    fragment.querySelector('[data-message-text]').textContent = message;
-    centerContent.replaceChildren(fragment);
+function renderHomeView() {
+    elements.centerContent.replaceChildren(cloneTemplate(elements.templates.home));
 }
 
 function renderLoadingView() {
-    centerContent.replaceChildren(cloneTemplate(loadingTemplate));
+    elements.centerContent.replaceChildren(cloneTemplate(elements.templates.loading));
+}
+
+function renderMessageView(message) {
+    const fragment = cloneTemplate(elements.templates.message);
+    fragment.querySelector('[data-message-text]').textContent = message;
+    elements.centerContent.replaceChildren(fragment);
 }
 
 function updateActiveNav(activeItem) {
-    navItems.forEach(item => {
+    elements.navItems.forEach(item => {
         item.classList.toggle('active', item === activeItem);
     });
 }
@@ -125,6 +53,43 @@ function updateActiveNav(activeItem) {
 function updateBrowserUrl(item, replaceState = false) {
     const method = replaceState ? 'replaceState' : 'pushState';
     window.history[method]({ route: item.dataset.route }, '', item.getAttribute('href'));
+}
+
+function syncCustomSelect() {
+    if (!elements.userSelect || !userSelectUi.wrapper || !userSelectUi.value) {
+        return;
+    }
+
+    const selected = elements.userSelect.options[elements.userSelect.selectedIndex];
+    userSelectUi.value.textContent = selected ? selected.text : '';
+    userSelectUi.wrapper.classList.toggle('is-placeholder', !elements.userSelect.value);
+}
+
+function setUserSelectOptions(options, selectedValue = '') {
+    if (!elements.userSelect) {
+        return;
+    }
+
+    elements.userSelect.replaceChildren();
+
+    options.forEach(({ value, label }) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        option.selected = value === selectedValue;
+        elements.userSelect.appendChild(option);
+    });
+
+    syncCustomSelect();
+}
+
+function setUserSelectState(options, disabled = false) {
+    if (!elements.userSelect) {
+        return;
+    }
+
+    elements.userSelect.disabled = disabled;
+    setUserSelectOptions(options);
 }
 
 async function fetchSectionData(action, extraParams = {}) {
@@ -144,9 +109,10 @@ async function fetchSectionData(action, extraParams = {}) {
     });
 
     let payload;
+
     try {
         payload = await response.json();
-    } catch (parseError) {
+    } catch (error) {
         throw new Error(
             `[HTTP ${response.status}] La risposta non è JSON valido. ` +
             `Verifica che il server stia eseguendo PHP e non restituendo HTML. URL: ${apiUrl}`
@@ -160,84 +126,140 @@ async function fetchSectionData(action, extraParams = {}) {
     return payload;
 }
 
+async function loadUserOptions() {
+    if (!elements.userSelect) {
+        return;
+    }
+
+    setUserSelectState([{ value: '', label: 'Caricamento utenti...' }], true);
+
+    try {
+        const payload = await fetchSectionData('list_usernames', { limit: 100 });
+        const users = Array.isArray(payload.data && payload.data.items) ? payload.data.items : [];
+
+        if (users.length === 0) {
+            setUserSelectState([{ value: '', label: 'Nessun utente disponibile' }], true);
+            return;
+        }
+
+        const options = [
+            { value: '', label: '- Seleziona -' },
+            ...users.map(user => ({
+                value: user.nomeUtente,
+                label: user.nomeUtente
+            }))
+        ];
+
+        setUserSelectState(options, false);
+    } catch (error) {
+        setUserSelectState([{ value: '', label: 'Utenti non disponibili' }], true);
+    }
+}
+
+function updateHomeStats(data) {
+    if (!data) {
+        return;
+    }
+
+    const stats = {
+        'stat-quiz': data.quiz_count,
+        'stat-questions': data.question_count,
+        'stat-users': data.user_count
+    };
+
+    Object.entries(stats).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.textContent = value;
+        }
+    });
+}
+
+async function loadHomeStats() {
+    try {
+        const payload = await fetchSectionData('home');
+        updateHomeStats(payload.data);
+    } catch (error) {
+        console.error('[QUIZZING] Errore caricamento statistiche:', error.message);
+    }
+}
+
 async function activateRoute(route, options = {}) {
     const { replaceState = false } = options;
     const item = findNavItemByRoute(route);
-    const title = item.dataset.title || 'Home';
-    const action = item.dataset.action || '';
+    const isHome = item.dataset.route === 'home';
 
-    centerTitle.textContent = title;
-    centerTitle.classList.toggle('center-title--hidden', item.dataset.route === 'home');
+    elements.centerTitle.textContent = item.dataset.title || 'Home';
+    elements.centerTitle.classList.toggle('center-title--hidden', isHome);
     updateActiveNav(item);
     updateBrowserUrl(item, replaceState);
 
-    if (item.dataset.route === 'home') {
+    if (isHome) {
         renderHomeView();
-        // Carica in background le statistiche reali o mock dal server
-        fetchSectionData('home')
-            .then(payload => {
-                if (payload.data) {
-                    const quizEl = document.getElementById('stat-quiz');
-                    const questionsEl = document.getElementById('stat-questions');
-                    const usersEl = document.getElementById('stat-users');
-                    
-                    if (quizEl) quizEl.textContent = payload.data.quiz_count;
-                    if (questionsEl) questionsEl.textContent = payload.data.question_count;
-                    if (usersEl) usersEl.textContent = payload.data.user_count;
-                }
-            })
-            .catch(error => {
-                console.error('[QUIZZING] Errore caricamento statistiche:', error.message);
-            });
+        loadHomeStats();
         return;
     }
 
     renderLoadingView();
 
     try {
-        const payload = await fetchSectionData(action);
+        const payload = await fetchSectionData(item.dataset.action || '');
         renderMessageView(payload.message || 'Contenuto caricato.');
     } catch (error) {
         renderMessageView(error.message || 'Errore di comunicazione con il server.');
     }
 }
 
-navItems.forEach(item => {
-    item.addEventListener('click', event => {
-        event.preventDefault();
-        activateRoute(item.dataset.route);
-    });
-});
-
-centerContent.addEventListener('click', event => {
-    const cta = event.target.closest('[data-route]');
-
-    if (cta && !cta.closest('#nav-panel')) {
-        event.preventDefault();
-        activateRoute(cta.dataset.route);
-    }
-});
-
-window.addEventListener('popstate', event => {
-    const routeFromState = event.state && event.state.route;
-    const routeFromUrl = new URL(window.location.href).searchParams.get('view');
-    activateRoute(routeFromState || routeFromUrl || 'home', { replaceState: true });
-});
-
 function applyNavMode() {
-    navPanel.classList.remove('icon-only');
+    elements.navPanel.classList.remove('icon-only');
 
-    const labels = navPanel.querySelectorAll('.nav-label');
-    const anyTruncated = Array.from(labels).some(
+    const labels = elements.navPanel.querySelectorAll('.nav-label');
+    const hasTruncatedLabel = Array.from(labels).some(
         label => label.scrollWidth > label.offsetWidth + 1
     );
 
-    navPanel.classList.toggle('icon-only', anyTruncated);
+    elements.navPanel.classList.toggle('icon-only', hasTruncatedLabel);
 }
 
-new ResizeObserver(() => applyNavMode()).observe(navPanel);
+function bindEvents() {
+    if (elements.userSelect) {
+        elements.userSelect.addEventListener('change', syncCustomSelect);
+        syncCustomSelect();
+    }
 
-const initialRoute = new URL(window.location.href).searchParams.get('view') || 'home';
-activateRoute(initialRoute, { replaceState: true });
-applyNavMode();
-loadUserOptions();
+    elements.navItems.forEach(item => {
+        item.addEventListener('click', event => {
+            event.preventDefault();
+            activateRoute(item.dataset.route);
+        });
+    });
+
+    elements.centerContent.addEventListener('click', event => {
+        const cta = event.target.closest('[data-route]');
+
+        if (cta && !cta.closest('#nav-panel')) {
+            event.preventDefault();
+            activateRoute(cta.dataset.route);
+        }
+    });
+
+    window.addEventListener('popstate', event => {
+        const routeFromState = event.state && event.state.route;
+        const routeFromUrl = new URL(window.location.href).searchParams.get('view');
+        activateRoute(routeFromState || routeFromUrl || 'home', { replaceState: true });
+    });
+
+    new ResizeObserver(applyNavMode).observe(elements.navPanel);
+}
+
+function init() {
+    const initialRoute = new URL(window.location.href).searchParams.get('view') || 'home';
+
+    bindEvents();
+    activateRoute(initialRoute, { replaceState: true });
+    applyNavMode();
+    loadUserOptions();
+}
+
+init();

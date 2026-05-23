@@ -1,22 +1,8 @@
-/* ─── Google Font ─────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ─── Reset ──────────────────────────────────────────────────── */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-[hidden] {
-    display: none !important;
-}
-
-/* ─── Design Tokens ───────────────────────────────────────────── */
 :root {
     --bg: #f6f7f8;
     --surface: #ffffff;
-    --surface-raised: #fcfcfc;
     --border: #e7e8ea;
     --text-primary: #17181a;
     --text-secondary: #5e6168;
@@ -33,7 +19,16 @@
     --panel-gap: 10px;
 }
 
-/* ─── Base ────────────────────────────────────────────────────── */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+[hidden] {
+    display: none !important;
+}
+
 html,
 body {
     height: 100%;
@@ -42,76 +37,34 @@ body {
 }
 
 body {
-    height: 100vh;
     display: grid;
     grid-template-rows: var(--header-height) minmax(0, 1fr) var(--footer-height);
-    background-color: var(--bg);
-    color: var(--text-primary);
-    overflow: hidden;
+    gap: var(--panel-gap);
+    height: 100vh;
     padding: var(--outer-gap);
-    gap: var(--panel-gap);
-}
-
-/* ─── Header ──────────────────────────────────────────────────── */
-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
     overflow: hidden;
-    /* non sfora mai la riga del grid */
-    flex-shrink: 0;
-    /* non si restringe su zoom */
-}
-
-.header-title {
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
+    background: var(--bg);
     color: var(--text-primary);
-    text-align: center;
 }
 
-.header-subtitle {
-    font-size: 0.72rem;
-    font-weight: bold;
-    color: var(--text-secondary);
-    letter-spacing: 0.03em;
-    text-align: center;
-}
-
-/* ─── Main layout ─────────────────────────────────────────────── */
-.main-content {
-    display: grid;
-    grid-template-columns: 1.35fr minmax(0, 5.15fr) 1.5fr;
-    min-height: 0;
-    min-width: 0;
-    /* evita overflow celle grid */
-    overflow: hidden;
-    gap: var(--panel-gap);
-}
-
-/* ─── Panels ──────────────────────────────────────────────────── */
-/*
- * .panel  → outer shell: border-radius + overflow:hidden agisce come clip mask.
- * .panel-body → inner scroll: scrollbar rimane dentro i bordi arrotondati.
- */
+.surface-block,
 .panel {
     background: var(--surface);
-    border-radius: var(--radius-md);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
-    overflow: hidden;
+}
+
+.surface-block {
+    border-radius: var(--radius-lg);
+}
+
+.panel {
     display: flex;
     flex-direction: column;
-    min-height: 0;
     min-width: 0;
-    /* evita overflow nelle celle grid */
+    min-height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-md);
     transition: box-shadow .2s ease;
 }
 
@@ -120,31 +73,17 @@ header {
 }
 
 .panel-body {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-gutter: stable;
-    padding: 22px 18px;
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: flex-start;
     min-height: 0;
+    padding: 22px 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 
-/* Il nav panel non ha contenuto scrollabile normalmente:
-   scrollbar-gutter:auto evita che il gutter riservato (5-17px)
-   falsi la misurazione del troncamento a certi zoom level */
-#nav-panel {
-    scrollbar-gutter: auto;
-}
-
-.left .panel-body {
-    align-items: stretch;
-    padding: clamp(14px, 1.4vw, 22px);
-    gap: 20px;
-}
-
-/* ─── Custom scrollbar ────────────────────────────────────────── */
 .panel-body::-webkit-scrollbar {
     width: 5px;
 }
@@ -162,24 +101,62 @@ header {
     background: #9ca3af;
 }
 
-/* ─── Panel headings ──────────────────────────────────────────── */
+header,
+footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+header {
+    gap: 3px;
+}
+
+.header-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-align: center;
+}
+
+.header-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1.35fr minmax(0, 5.15fr) 1.5fr;
+    gap: var(--panel-gap);
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
 h2 {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    overflow-wrap: break-word;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    margin-bottom: 18px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    width: 100%;
-    overflow-wrap: break-word;
-    min-width: 0;
 }
 
-/* Center title hidden on home view */
-.center-title--hidden {
-    display: none;
+.left .panel-body {
+    align-items: stretch;
+    gap: 20px;
+    padding: clamp(14px, 1.4vw, 22px);
 }
 
 .left h2,
@@ -194,68 +171,69 @@ h2 {
 }
 
 .user-selection-container,
-.filter-container {
+.filter-container,
+.center-content,
+.content-view {
     width: 100%;
     min-width: 0;
 }
 
-/* ─── Custom select ───────────────────────────────────────── */
+.center-title--hidden {
+    display: none;
+}
+
 .custom-select-wrapper {
     position: relative;
     width: 100%;
     min-width: 0;
 }
 
-/* Il <select> nativo copre tutto il wrapper: invisibile ma cliccabile */
 .custom-select-native {
     position: absolute;
     inset: 0;
+    z-index: 1;
     width: 100%;
     height: 100%;
     opacity: 0;
     cursor: pointer;
-    z-index: 1;
     font: inherit;
 }
 
-/* Layer visivo */
 .custom-select-trigger {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    min-width: 0;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--surface);
     color: var(--text-primary);
+    cursor: pointer;
     font-size: 0.875rem;
     font-weight: 500;
-    cursor: pointer;
-    transition: border-color .15s ease, box-shadow .15s ease;
-    min-width: 0;
     user-select: none;
-}
-
-/* Focus ring: scatta quando il <select> nativo ha focus */
-.custom-select-wrapper:focus-within .custom-select-trigger {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(32, 34, 38, 0.1);
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 .custom-select-wrapper:hover .custom-select-trigger {
     border-color: #c4c6ca;
 }
 
+.custom-select-wrapper:focus-within .custom-select-trigger {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(32, 34, 38, 0.1);
+}
+
 .custom-select-value {
     flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    min-width: 0;
 }
 
-/* Opzione vuota (placeholder) */
 .custom-select-wrapper.is-placeholder .custom-select-value {
     color: var(--text-secondary);
     font-weight: 400;
@@ -269,19 +247,8 @@ h2 {
     transition: transform .2s ease;
 }
 
-/* Ruota la freccia quando il select è aperto (focus) */
 .custom-select-wrapper:focus-within .custom-select-chevron {
     transform: rotate(180deg);
-}
-
-.center-content {
-    width: 100%;
-    min-width: 0;
-}
-
-.content-view {
-    width: 100%;
-    min-width: 0;
 }
 
 .content-view-message {
@@ -289,77 +256,56 @@ h2 {
 }
 
 .placeholder-copy {
+    max-width: 64ch;
+    color: var(--text-secondary);
     font-size: 0.98rem;
     line-height: 1.75;
-    color: var(--text-secondary);
-    max-width: 64ch;
 }
 
-/* ─── Home card (wrapper) ──────────────────────────────────── */
 .home-card {
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 4px 0 32px;
-    box-shadow: none;
-    animation: home-fade-in .45s ease both;
     width: 100%;
+    padding: 4px 0 32px;
+    animation: home-fade-in .45s ease both;
 }
 
-@keyframes home-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* ─── Home hero (two-column grid) ───────────────────────────── */
 .home-hero {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 28px;
     align-items: start;
+    gap: 28px;
     width: 100%;
 }
 
-/* Left column: title + subtitle + CTAs */
 .home-hero-lead {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     padding-top: 6px;
-    /* align optically with card tops */
 }
 
 .home-title {
+    margin-bottom: 16px;
+    color: var(--text-primary);
     font-size: clamp(1.7rem, 1.3rem + 1.6vw, 3rem);
-    line-height: 1.0;
     font-weight: 800;
     letter-spacing: -0.05em;
-    color: var(--text-primary);
-    margin-bottom: 16px;
+    line-height: 1;
     animation: home-fade-in .4s .05s ease both;
 }
 
 .home-subtitle {
-    font-size: 0.93rem;
-    line-height: 1.65;
-    color: var(--text-secondary);
     max-width: 52ch;
     margin-bottom: 26px;
+    color: var(--text-secondary);
+    font-size: 0.93rem;
+    line-height: 1.65;
     animation: home-fade-in .4s .1s ease both;
 }
 
-/* CTA buttons */
 .home-cta-row {
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
+    gap: 10px;
     animation: home-fade-in .4s .15s ease both;
 }
 
@@ -370,186 +316,58 @@ h2 {
     gap: 6px;
     padding: 9px 20px;
     border-radius: var(--radius-sm);
+    cursor: pointer;
     font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-    cursor: pointer;
 }
 
 .home-cta-primary {
     background: var(--accent);
-    color: #fff;
     box-shadow: 0 4px 14px rgba(15, 18, 24, .18);
+    color: #fff;
+}
+
+.home-cta-primary:hover,
+.home-cta-secondary:hover {
+    transform: translateY(-1px);
 }
 
 .home-cta-primary:hover {
-    transform: translateY(-1px);
     box-shadow: 0 8px 22px rgba(15, 18, 24, .22);
 }
 
 .home-cta-secondary {
-    background: var(--surface);
-    color: var(--text-primary);
     border: 1px solid var(--border);
+    background: var(--surface);
     box-shadow: 0 2px 6px rgba(15, 18, 24, .05);
+    color: var(--text-primary);
 }
 
 .home-cta-secondary:hover {
     background: var(--bg);
-    transform: translateY(-1px);
 }
 
-/* ─── Divider ──────────────────────────────────────────────── */
-.home-divider {
-    width: min(200px, 40%);
-    height: 1px;
-    margin: 32px 0 28px;
-    background: linear-gradient(90deg, var(--border) 0%, rgba(231, 232, 234, 0) 100%);
-}
-
-/* ─── Eyebrow / section heading ────────────────────────────── */
-.home-card-eyebrow {
-    margin-bottom: 8px;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-}
-
-.home-card-title {
-    margin-bottom: 20px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text-primary);
-}
-
-/* ─── Feature cards grid (right column of hero) ────────────── */
-.home-features {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    align-content: start;
-}
-
-.home-feature-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
-    animation: home-fade-in .4s ease both;
-}
-
-.home-feature-card:hover {
-    box-shadow: 0 6px 20px rgba(15, 18, 24, .07);
-    transform: translateY(-2px);
-    border-color: #d0d2d6;
-}
-
-.home-feature-icon {
-    flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    background: var(--accent-light);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-}
-
-.home-feature-icon svg {
-    width: 18px;
-    height: 18px;
-}
-
-.home-feature-label {
-    font-size: 0.88rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 3px;
-}
-
-.home-feature-desc {
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: var(--text-secondary);
-}
-
-/* ─── Steps ────────────────────────────────────────────────── */
-.home-steps {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    counter-reset: step;
-    display: grid;
-    gap: 12px;
-    width: 100%;
-}
-
-.home-steps li {
-    counter-increment: step;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 16px;
-    align-items: center;
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    font-size: 0.88rem;
-    line-height: 1.55;
-    color: var(--text-secondary);
-    transition: border-color .18s ease, background .18s ease;
-}
-
-.home-steps li:hover {
-    border-color: #cfd1d5;
-    background: var(--bg);
-}
-
-.home-steps li::before {
-    content: counter(step);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.9rem;
-    flex-shrink: 0;
-}
-
-/* ─── Compact Stats on Home Hero ─────────────────────────── */
 .home-stats-compact {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 20px 14px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    align-items: center;
     gap: 8px;
     width: 100%;
-    align-items: center;
+    padding: 20px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
     text-align: center;
+    animation: home-fade-in .5s .1s ease both;
     transition: box-shadow .2s ease, border-color .2s ease;
-    animation: home-fade-in .5s .10s ease both;
 }
 
 .home-stats-compact:hover {
-    box-shadow: var(--shadow-md);
     border-color: #c4c6ca;
+    box-shadow: var(--shadow-md);
 }
 
 .stat-compact-item {
@@ -571,89 +389,109 @@ h2 {
 }
 
 .stat-compact-value {
+    color: var(--accent);
     font-size: 1.7rem;
     font-weight: 800;
-    color: var(--accent);
     letter-spacing: -0.03em;
     line-height: 1.2;
 }
 
 .stat-compact-label {
+    color: var(--text-secondary);
     font-size: 0.72rem;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.home-divider {
+    width: min(200px, 40%);
+    height: 1px;
+    margin: 32px 0 28px;
+    background: linear-gradient(90deg, var(--border) 0%, rgba(231, 232, 234, 0) 100%);
+}
+
+.home-card-eyebrow {
+    margin-bottom: 8px;
     color: var(--text-secondary);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
 }
 
-@media (max-width: 980px) {
-
-    /* Hero stacks vertically: lead on top, feature cards below */
-    .home-hero {
-        grid-template-columns: 1fr;
-    }
-
-    .home-features {
-        grid-template-columns: 1fr 1fr;
-    }
+.home-card-title {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
-@media (max-width: 620px) {
-    .home-features {
-        grid-template-columns: 1fr;
-    }
+.home-steps {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+    list-style: none;
 }
 
-/* ─── Footer ──────────────────────────────────────────────────── */
-footer {
+.home-steps li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-secondary);
+    counter-increment: step;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.home-steps li:hover {
+    border-color: #cfd1d5;
+    background: var(--bg);
+}
+
+.home-steps li::before {
+    content: counter(step);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    padding-inline: 20px;
-    overflow: hidden;
-    /* non sfora mai la riga del grid */
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
-    /* non si restringe su zoom */
-    min-height: var(--footer-height);
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
 }
 
-.footer-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    text-align: center;
-    white-space: nowrap;
+#nav-panel {
+    scrollbar-gutter: auto;
 }
 
-.footer-subtitle {
-    font-size: 0.65rem;
-    font-weight: 400;
-    color: var(--text-secondary);
-    text-align: center;
-    line-height: 1.4;
-    max-width: 72ch;
-}
-
-/* ─── Nav items ───────────────────────────────────────────────── */
 .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+    flex-shrink: 0;
     padding: 8px 10px;
     border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-secondary);
     text-decoration: none;
-    cursor: pointer;
     transition: background .15s ease, color .15s ease;
-    flex-shrink: 0;
-    /* white-space/overflow/text-overflow vanno su .nav-label, non qui:
-       su un flex container non hanno l'effetto di ellipsis sui figli */
 }
 
 .nav-item:hover {
@@ -665,21 +503,6 @@ footer {
     background: var(--accent-light);
     color: var(--accent);
     font-weight: 600;
-}
-
-.nav-separator {
-    width: 100%;
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 6px 0;
-}
-
-/* ─── Nav icon + label ────────────────────────────────────────── */
-.nav-item {
-    /* Override: flex row per affiancare icona e testo */
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .nav-icon {
@@ -701,10 +524,15 @@ footer {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    transition: opacity .15s ease, max-width .2s ease;
 }
 
-/* ─── Icon-only mode (attivato da JS via ResizeObserver) ─────── */
+.nav-separator {
+    width: 100%;
+    margin: 6px 0;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
 #nav-panel.icon-only .nav-item {
     justify-content: center;
 }
@@ -722,4 +550,60 @@ footer {
 #nav-panel.icon-only .nav-item.active .nav-icon,
 #nav-panel.icon-only .nav-item:hover .nav-icon {
     opacity: 1;
+}
+
+footer {
+    gap: 4px;
+    min-height: var(--footer-height);
+    padding-inline: 20px;
+}
+
+.footer-title {
+    color: var(--text-primary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.footer-subtitle {
+    max-width: 72ch;
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    font-weight: 400;
+    line-height: 1.4;
+    text-align: center;
+}
+
+@keyframes home-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 980px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    body {
+        overflow: auto;
+    }
+
+    .main-content {
+        grid-template-columns: 1fr;
+        overflow: visible;
+    }
+
+    .panel {
+        min-height: 220px;
+    }
 }

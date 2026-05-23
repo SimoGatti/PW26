@@ -1,18 +1,6 @@
 <?php
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=UTF-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
 const DB_HOST = 'localhost';
 const DB_PORT = 3306;
 const DB_NAME = 'my_namenotfound';
@@ -20,7 +8,24 @@ const DB_USER = 'namenotfound';
 const DB_PASS = 'EG8F728v7eA4';
 const DB_CHARSET = 'utf8mb4';
 
-function respond(int $httpStatus, string $status, string $message, $data = null)
+send_default_headers();
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+function send_default_headers(): void
+{
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+}
+
+function respond(int $httpStatus, string $status, string $message, $data = null): void
 {
     http_response_code($httpStatus);
     echo json_encode(
@@ -79,6 +84,17 @@ function param_limit(array $data, int $default = 25): int
 {
     $limit = isset($data['limit']) ? (int) $data['limit'] : $default;
     return max(1, min($limit, 100));
+}
+
+function fetch_home_stats(): array
+{
+    $pdo = db();
+
+    return [
+        'quiz_count'     => (int) $pdo->query('SELECT COUNT(*) FROM `Quiz`')->fetchColumn(),
+        'question_count' => (int) $pdo->query('SELECT COUNT(*) FROM `Domanda`')->fetchColumn(),
+        'user_count'     => (int) $pdo->query('SELECT COUNT(*) FROM `Utente`')->fetchColumn()
+    ];
 }
 
 function fetch_usernames(int $limit): array
@@ -174,76 +190,62 @@ function fetch_participations(string $search, int $limit): array
     return $statement->fetchAll();
 }
 
-$requestData = request_data();
-$action = param_string($requestData, 'action');
+function handle_request(): void
+{
+    $requestData = request_data();
+    $action = param_string($requestData, 'action');
 
-if ($action === '') {
-    respond(400, 'error', 'Parametro action mancante.', null);
-}
+    if ($action === '') {
+        respond(400, 'error', 'Parametro action mancante.', null);
+    }
 
-try {
     switch ($action) {
         case 'home':
-            $pdo = db();
-            $quizCount     = $pdo->query("SELECT COUNT(*) FROM `Quiz`")->fetchColumn();
-            $questionCount = $pdo->query("SELECT COUNT(*) FROM `Domanda`")->fetchColumn();
-            $userCount     = $pdo->query("SELECT COUNT(*) FROM `Utente`")->fetchColumn();
-
-            respond(200, 'success', 'Statistiche caricate.', [
-                'quiz_count'     => (int) $quizCount,
-                'question_count' => (int) $questionCount,
-                'user_count'     => (int) $userCount
-            ]);
+            respond(200, 'success', 'Statistiche caricate.', fetch_home_stats());
             break;
 
         case 'list_usernames':
-            $limit = param_limit($requestData, 100);
-            respond(
-                200,
-                'success',
-                'Elenco utenti caricato correttamente.',
-                ['items' => fetch_usernames($limit)]
-            );
+            respond(200, 'success', 'Elenco utenti caricato correttamente.', [
+                'items' => fetch_usernames(param_limit($requestData, 100))
+            ]);
             break;
 
         case 'search_users':
         case 'manage_users':
-            $search = param_string($requestData, 'q');
-            $limit = param_limit($requestData, 25);
-            respond(
-                200,
-                'success',
-                'Utenti caricati correttamente.',
-                ['items' => fetch_users($search, $limit)]
-            );
+            respond(200, 'success', 'Utenti caricati correttamente.', [
+                'items' => fetch_users(
+                    param_string($requestData, 'q'),
+                    param_limit($requestData)
+                )
+            ]);
             break;
 
         case 'search_quizzes':
-            $search = param_string($requestData, 'q');
-            $limit = param_limit($requestData, 25);
-            respond(
-                200,
-                'success',
-                'Quiz caricati correttamente.',
-                ['items' => fetch_quizzes($search, $limit)]
-            );
+            respond(200, 'success', 'Quiz caricati correttamente.', [
+                'items' => fetch_quizzes(
+                    param_string($requestData, 'q'),
+                    param_limit($requestData)
+                )
+            ]);
             break;
 
         case 'search_participations':
-            $search = param_string($requestData, 'q');
-            $limit = param_limit($requestData, 25);
-            respond(
-                200,
-                'success',
-                'Partecipazioni caricate correttamente.',
-                ['items' => fetch_participations($search, $limit)]
-            );
+            respond(200, 'success', 'Partecipazioni caricate correttamente.', [
+                'items' => fetch_participations(
+                    param_string($requestData, 'q'),
+                    param_limit($requestData)
+                )
+            ]);
             break;
 
         default:
             respond(400, 'error', 'Azione non valida.', null);
             break;
     }
+}
+
+try {
+    handle_request();
 } catch (PDOException $exception) {
     respond(500, 'error', 'Errore database: ' . $exception->getMessage(), null);
 } catch (Throwable $exception) {
