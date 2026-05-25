@@ -141,65 +141,138 @@ function fetch_usernames(int $limit): array
     return $statement->fetchAll();
 }
 
-function fetch_users(string $search, int $limit, int $offset, string $sort = '', string $direction = 'ASC'): array
+function fetch_user_stats(): array
 {
-    $sort = param_sort($sort, ['nomeUtente', 'nome', 'cognome', 'numeroQuizCreati', 'numeroPartecipazioni'], 'cognome');
-    $dir = param_direction($direction);
+    $pdo = db();
+    $quizMax = (int) $pdo->query('
+        SELECT COALESCE(MAX(c),0) FROM (SELECT COUNT(*) AS c FROM Quiz GROUP BY creatore) t
+    ')->fetchColumn();
+    $partMax = (int) $pdo->query('
+        SELECT COALESCE(MAX(c),0) FROM (SELECT COUNT(*) AS c FROM Partecipazione GROUP BY utente) t
+    ')->fetchColumn();
+    return ['quizMax' => $quizMax, 'partMax' => $partMax];
+}
+
+function fetch_quiz_stats(): array
+{
+    $pdo = db();
+    $stats = $pdo->query('
+        SELECT
+            COALESCE(MAX(numeroDomande), 0) AS questionMax,
+            COALESCE(MAX(numeroPartecipazioni), 0) AS participationMax
+        FROM (
+            SELECT
+                q.codice,
+                COUNT(DISTINCT d.numero) AS numeroDomande,
+                COUNT(DISTINCT p.codice) AS numeroPartecipazioni
+            FROM Quiz q
+            LEFT JOIN Domanda d ON d.quiz = q.codice
+            LEFT JOIN Partecipazione p ON p.quiz = q.codice
+            GROUP BY q.codice
+        ) t
+    ')->fetch();
+
+    return [
+        'questionMax' => (int) ($stats['questionMax'] ?? 0),
+        'participationMax' => (int) ($stats['participationMax'] ?? 0),
+    ];
+}
+
+function fetch_participation_stats(): array
+{
+    $pdo = db();
+    $stats = $pdo->query('
+        SELECT
+            COALESCE(MAX(numeroRisposteDate), 0) AS responseMax,
+            COALESCE(MAX(punteggioTotale), 0) AS scoreMax
+        FROM (
+            SELECT
+                p.codice,
+                COUNT(DISTINCT ruq.domanda) AS numeroRisposteDate,
+                COALESCE(SUM(CASE WHEN r.tipo = \'Corretta\' THEN r.punteggio ELSE 0 END), 0) AS punteggioTotale
+            FROM Partecipazione p
+            LEFT JOIN RispostaUtenteQuiz ruq ON ruq.partecipazione = p.codice
+            LEFT JOIN Risposta r ON r.quiz = ruq.quiz AND r.domanda = ruq.domanda AND r.numero = ruq.risposta
+            GROUP BY p.codice
+        ) t
+    ')->fetch();
+
+    return [
+        'responseMax' => (int) ($stats['responseMax'] ?? 0),
+        'scoreMax' => (int) ($stats['scoreMax'] ?? 0),
+    ];
+}
+
+function fetch_users(
+    string $search, int $limit, int $offset,
+    string $sort = '', string $direction = 'ASC',
+    string $fUsername = '', string $fNome = '', string $fCognome = '', string $fEmail = '',
+    int $quizMin = -1, int $quizMax = -1, int $partMin = -1, int $partMax = -1
+): array {
+    $sort = param_sort($sort, ['nomeUtente', 'nome', 'cognome', 'email', 'numeroQuizCreati', 'numeroPartecipazioni'], 'cognome');
+    $dir  = param_direction($direction);
 
     $orderMap = [
-        'nomeUtente' => "u.nomeUtente $dir",
-        'nome' => "u.nome $dir, u.cognome ASC",
-        'cognome' => "u.cognome $dir, u.nome ASC",
-        'numeroQuizCreati' => "numeroQuizCreati $dir, u.cognome ASC",
+        'nomeUtente'           => "u.nomeUtente $dir",
+        'nome'                 => "u.nome $dir, u.cognome ASC",
+        'cognome'              => "u.cognome $dir, u.nome ASC",
+        'email'                => "u.email $dir, u.cognome ASC",
+        'numeroQuizCreati'     => "numeroQuizCreati $dir, u.cognome ASC",
         'numeroPartecipazioni' => "numeroPartecipazioni $dir, u.cognome ASC",
     ];
     $orderClause = $orderMap[$sort] ?? 'u.cognome ASC, u.nome ASC';
 
-    $where = '1 = 1';
-    $params = [];
+    $conditions = [];
+    $params     = [];
 
+    // Ricerca globale (retrocompatibile)
     if ($search !== '') {
-        $where = '
-            (
-                nomeUtente LIKE :searchUsername
-                OR nome LIKE :searchNome
-                OR cognome LIKE :searchCognome
-                OR email LIKE :searchEmail
-            )
-        ';
-        $searchLike = '%' . $search . '%';
-        $params = [
-            'searchUsername' => $searchLike,
-            'searchNome' => $searchLike,
-            'searchCognome' => $searchLike,
-            'searchEmail' => $searchLike,
-        ];
+        $like = '%' . $search . '%';
+        $conditions[] = '(u.nomeUtente LIKE :srchAll OR u.nome LIKE :srchAll2 OR u.cognome LIKE :srchAll3 OR u.email LIKE :srchAll4)';
+        $params['srchAll']  = $like;
+        $params['srchAll2'] = $like;
+        $params['srchAll3'] = $like;
+        $params['srchAll4'] = $like;
     }
 
-    $total = db()->prepare(
-        "
-        SELECT COUNT(*)
-        FROM Utente
-        WHERE $where
-        "
-    );
-    $total->execute($params);
-    $totalCount = (int) $total->fetchColumn();
+    // Ricerca per singolo campo
+    if ($fUsername !== '') { $conditions[] = 'u.nomeUtente LIKE :fU'; $params['fU'] = '%' . $fUsername . '%'; }
+    if ($fNome     !== '') { $conditions[] = 'u.nome LIKE :fN';       $params['fN'] = '%' . $fNome     . '%'; }
+    if ($fCognome  !== '') { $conditions[] = 'u.cognome LIKE :fC';    $params['fC'] = '%' . $fCognome  . '%'; }
+    if ($fEmail    !== '') { $conditions[] = 'u.email LIKE :fE';       $params['fE'] = '%' . $fEmail    . '%'; }
 
-    $where = str_replace(
-        ['nomeUtente', 'nome LIKE', 'cognome', 'email'],
-        ['u.nomeUtente', 'u.nome LIKE', 'u.cognome', 'u.email'],
-        $where
-    );
+    $where = !empty($conditions) ? implode(' AND ', $conditions) : '1 = 1';
 
-    $stmt = db()->prepare(
-        "
+    // Filtri numerici: applicati via HAVING sulla subquery
+    $havingParts = [];
+    if ($quizMin >= 0) { $havingParts[] = 'numeroQuizCreati >= :qMin'; $params['qMin'] = $quizMin; }
+    if ($quizMax >= 0) { $havingParts[] = 'numeroQuizCreati <= :qMax'; $params['qMax'] = $quizMax; }
+    if ($partMin >= 0) { $havingParts[] = 'numeroPartecipazioni >= :pMin'; $params['pMin'] = $partMin; }
+    if ($partMax >= 0) { $havingParts[] = 'numeroPartecipazioni <= :pMax'; $params['pMax'] = $partMax; }
+    $having = !empty($havingParts) ? 'HAVING ' . implode(' AND ', $havingParts) : '';
+
+    $countSql = "
+        SELECT COUNT(*) FROM (
+            SELECT u.nomeUtente,
+                (SELECT COUNT(*) FROM Quiz WHERE creatore = u.nomeUtente) AS numeroQuizCreati,
+                (SELECT COUNT(*) FROM Partecipazione WHERE utente = u.nomeUtente) AS numeroPartecipazioni
+            FROM Utente u
+            WHERE $where
+            $having
+        ) _c
+    ";
+    $countStmt = db()->prepare($countSql);
+    $countStmt->execute($params);
+    $totalCount = (int) $countStmt->fetchColumn();
+
+    $stmt = db()->prepare("
         SELECT
             u.nomeUtente, u.nome, u.cognome, u.email,
             (SELECT COUNT(*) FROM Quiz WHERE creatore = u.nomeUtente) AS numeroQuizCreati,
             (SELECT COUNT(*) FROM Partecipazione WHERE utente = u.nomeUtente) AS numeroPartecipazioni
         FROM Utente u
         WHERE $where
+        $having
         ORDER BY $orderClause
         LIMIT $limit OFFSET $offset
     ");
@@ -208,7 +281,23 @@ function fetch_users(string $search, int $limit, int $offset, string $sort = '',
     return [$stmt->fetchAll(), $totalCount];
 }
 
-function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '', string $direction = 'ASC', string $creatore = '', string $stato = ''): array
+function fetch_quizzes(
+    string $search,
+    int $limit,
+    int $offset,
+    string $sort = '',
+    string $direction = 'ASC',
+    string $creatore = '',
+    string $stato = '',
+    string $fTitolo = '',
+    string $dateFrom = '',
+    string $dateTo = '',
+    string $codice = '',
+    int $questionMin = -1,
+    int $questionMax = -1,
+    int $participationMin = -1,
+    int $participationMax = -1
+): array
 {
     $conditions = [];
     $params = [];
@@ -228,8 +317,18 @@ function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '
     }
 
     if ($creatore !== '') {
-        $conditions[] = 'q.creatore = :creatore';
-        $params['creatore'] = $creatore;
+        $conditions[] = 'q.creatore LIKE :creatore';
+        $params['creatore'] = '%' . $creatore . '%';
+    }
+
+    if ($fTitolo !== '') {
+        $conditions[] = 'q.titolo LIKE :fTitolo';
+        $params['fTitolo'] = '%' . $fTitolo . '%';
+    }
+
+    if ($codice !== '') {
+        $conditions[] = 'CAST(q.codice AS CHAR) LIKE :codice';
+        $params['codice'] = '%' . $codice . '%';
     }
 
     if ($stato === 'futuro') {
@@ -240,7 +339,23 @@ function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '
         $conditions[] = 'q.dataFine < CURDATE()';
     }
 
+    if ($dateFrom !== '') {
+        $conditions[] = 'q.dataInizio >= :dateFrom';
+        $params['dateFrom'] = $dateFrom;
+    }
+
+    if ($dateTo !== '') {
+        $conditions[] = 'q.dataFine <= :dateTo';
+        $params['dateTo'] = $dateTo;
+    }
+
     $where = !empty($conditions) ? implode(' AND ', $conditions) : '1 = 1';
+    $havingParts = [];
+    if ($questionMin >= 0) { $havingParts[] = 'numeroDomande >= :questionMin'; $params['questionMin'] = $questionMin; }
+    if ($questionMax >= 0) { $havingParts[] = 'numeroDomande <= :questionMax'; $params['questionMax'] = $questionMax; }
+    if ($participationMin >= 0) { $havingParts[] = 'numeroPartecipazioni >= :participationMin'; $params['participationMin'] = $participationMin; }
+    if ($participationMax >= 0) { $havingParts[] = 'numeroPartecipazioni <= :participationMax'; $params['participationMax'] = $participationMax; }
+    $having = !empty($havingParts) ? 'HAVING ' . implode(' AND ', $havingParts) : '';
 
     $sort = param_sort($sort, ['codice', 'titolo', 'dataInizio', 'dataFine', 'numeroDomande', 'numeroPartecipazioni'], 'codice');
     $dir = param_direction($direction);
@@ -255,7 +370,20 @@ function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '
     ];
     $orderClause = $orderMap[$sort] ?? 'q.codice DESC';
 
-    $total = db()->prepare("SELECT COUNT(*) FROM Quiz q WHERE $where");
+    $total = db()->prepare("
+        SELECT COUNT(*) FROM (
+            SELECT
+                q.codice,
+                COUNT(DISTINCT d.numero) AS numeroDomande,
+                COUNT(DISTINCT p.codice) AS numeroPartecipazioni
+            FROM Quiz q
+            LEFT JOIN Domanda d ON d.quiz = q.codice
+            LEFT JOIN Partecipazione p ON p.quiz = q.codice
+            WHERE $where
+            GROUP BY q.codice
+            $having
+        ) _c
+    ");
     $total->execute($params);
     $totalCount = (int) $total->fetchColumn();
 
@@ -278,6 +406,7 @@ function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '
         LEFT JOIN Partecipazione p ON p.quiz = q.codice
         WHERE $where
         GROUP BY q.codice, q.titolo, q.creatore, q.dataInizio, q.dataFine
+        $having
         ORDER BY $orderClause
         LIMIT $limit OFFSET $offset
     ");
@@ -286,7 +415,24 @@ function fetch_quizzes(string $search, int $limit, int $offset, string $sort = '
     return [$stmt->fetchAll(), $totalCount];
 }
 
-function fetch_participations(string $search, int $limit, int $offset, string $sort = '', string $direction = 'ASC', string $utente = '', string $quiz = '', string $dateFrom = '', string $dateTo = ''): array
+function fetch_participations(
+    string $search,
+    int $limit,
+    int $offset,
+    string $sort = '',
+    string $direction = 'ASC',
+    string $utente = '',
+    string $quiz = '',
+    string $dateFrom = '',
+    string $dateTo = '',
+    string $fUtente = '',
+    string $fTitoloQuiz = '',
+    string $codice = '',
+    int $responseMin = -1,
+    int $responseMax = -1,
+    int $scoreMin = -1,
+    int $scoreMax = -1
+): array
 {
     $conditions = [];
     $params = [];
@@ -298,11 +444,13 @@ function fetch_participations(string $search, int $limit, int $offset, string $s
                 p.utente LIKE :searchUtente
                 OR q.titolo LIKE :searchTitolo
                 OR CAST(p.quiz AS CHAR) LIKE :searchQuiz
+                OR CAST(p.codice AS CHAR) LIKE :searchCodice
             )
         ';
         $params['searchUtente'] = $searchLike;
         $params['searchTitolo'] = $searchLike;
         $params['searchQuiz'] = $searchLike;
+        $params['searchCodice'] = $searchLike;
     }
 
     if ($utente !== '') {
@@ -310,9 +458,24 @@ function fetch_participations(string $search, int $limit, int $offset, string $s
         $params['p_utente'] = $utente;
     }
 
+    if ($fUtente !== '') {
+        $conditions[] = 'p.utente LIKE :f_utente';
+        $params['f_utente'] = '%' . $fUtente . '%';
+    }
+
     if ($quiz !== '') {
         $conditions[] = 'p.quiz = :p_quiz';
         $params['p_quiz'] = (int) $quiz;
+    }
+
+    if ($fTitoloQuiz !== '') {
+        $conditions[] = 'q.titolo LIKE :f_titolo_quiz';
+        $params['f_titolo_quiz'] = '%' . $fTitoloQuiz . '%';
+    }
+
+    if ($codice !== '') {
+        $conditions[] = 'CAST(p.codice AS CHAR) LIKE :codice';
+        $params['codice'] = '%' . $codice . '%';
     }
 
     if ($dateFrom !== '') {
@@ -326,11 +489,18 @@ function fetch_participations(string $search, int $limit, int $offset, string $s
     }
 
     $where = !empty($conditions) ? implode(' AND ', $conditions) : '1 = 1';
+    $havingParts = [];
+    if ($responseMin >= 0) { $havingParts[] = 'numeroRisposteDate >= :responseMin'; $params['responseMin'] = $responseMin; }
+    if ($responseMax >= 0) { $havingParts[] = 'numeroRisposteDate <= :responseMax'; $params['responseMax'] = $responseMax; }
+    if ($scoreMin >= 0) { $havingParts[] = 'punteggioTotale >= :scoreMin'; $params['scoreMin'] = $scoreMin; }
+    if ($scoreMax >= 0) { $havingParts[] = 'punteggioTotale <= :scoreMax'; $params['scoreMax'] = $scoreMax; }
+    $having = !empty($havingParts) ? 'HAVING ' . implode(' AND ', $havingParts) : '';
 
-    $sort = param_sort($sort, ['data', 'punteggioTotale', 'numeroRisposteDate'], 'data');
+    $sort = param_sort($sort, ['codice', 'data', 'punteggioTotale', 'numeroRisposteDate'], 'data');
     $dir = param_direction($direction);
 
     $orderMap = [
+        'codice' => "p.codice $dir",
         'data' => "p.data $dir, p.codice DESC",
         'punteggioTotale' => "punteggioTotale $dir, p.data DESC",
         'numeroRisposteDate' => "numeroRisposteDate $dir, p.data DESC",
@@ -338,10 +508,19 @@ function fetch_participations(string $search, int $limit, int $offset, string $s
     $orderClause = $orderMap[$sort] ?? 'p.data DESC, p.codice DESC';
 
     $total = db()->prepare("
-        SELECT COUNT(*)
-        FROM Partecipazione p
-        INNER JOIN Quiz q ON q.codice = p.quiz
-        WHERE $where
+        SELECT COUNT(*) FROM (
+            SELECT
+                p.codice,
+                COUNT(DISTINCT ruq.domanda) AS numeroRisposteDate,
+                COALESCE(SUM(CASE WHEN r.tipo = 'Corretta' THEN r.punteggio ELSE 0 END), 0) AS punteggioTotale
+            FROM Partecipazione p
+            INNER JOIN Quiz q ON q.codice = p.quiz
+            LEFT JOIN RispostaUtenteQuiz ruq ON ruq.partecipazione = p.codice
+            LEFT JOIN Risposta r ON r.quiz = ruq.quiz AND r.domanda = ruq.domanda AND r.numero = ruq.risposta
+            WHERE $where
+            GROUP BY p.codice
+            $having
+        ) _c
     ");
     $total->execute($params);
     $totalCount = (int) $total->fetchColumn();
@@ -361,6 +540,7 @@ function fetch_participations(string $search, int $limit, int $offset, string $s
         LEFT JOIN Risposta r ON r.quiz = ruq.quiz AND r.domanda = ruq.domanda AND r.numero = ruq.risposta
         WHERE $where
         GROUP BY p.codice, p.utente, p.quiz, q.titolo, p.data
+        $having
         ORDER BY $orderClause
         LIMIT $limit OFFSET $offset
     ");
@@ -513,7 +693,12 @@ function fetch_quiz_detail(int $codice): void
         SELECT
             q.codice, q.titolo, q.creatore, q.dataInizio, q.dataFine,
             (SELECT COUNT(*) FROM Domanda WHERE quiz = q.codice) AS numeroDomande,
-            (SELECT COUNT(*) FROM Partecipazione WHERE quiz = q.codice) AS numeroPartecipazioni
+            (SELECT COUNT(*) FROM Partecipazione WHERE quiz = q.codice) AS numeroPartecipazioni,
+            CASE
+                WHEN q.dataInizio > CURDATE() THEN \'futuro\'
+                WHEN q.dataFine < CURDATE()   THEN \'chiuso\'
+                ELSE \'aperto\'
+            END AS stato
         FROM Quiz q
         WHERE q.codice = :c
     ');
@@ -817,16 +1002,37 @@ function handle_request(): void
             ]);
             break;
 
+        case 'user_stats':
+            respond(200, 'success', 'Statistiche utenti caricate.', fetch_user_stats());
+            break;
+
+        case 'quiz_stats':
+            respond(200, 'success', 'Statistiche quiz caricate.', fetch_quiz_stats());
+            break;
+
+        case 'participation_stats':
+            respond(200, 'success', 'Statistiche partecipazioni caricate.', fetch_participation_stats());
+            break;
+
         case 'search_users':
         case 'manage_users':
             $limit = param_limit($requestData);
-            $page = param_page($requestData);
+            $page  = param_page($requestData);
+            $qMin  = isset($requestData['quizMin'])  && $requestData['quizMin']  !== '' ? (int) $requestData['quizMin']  : -1;
+            $qMax  = isset($requestData['quizMax'])  && $requestData['quizMax']  !== '' ? (int) $requestData['quizMax']  : -1;
+            $pMin  = isset($requestData['partMin'])  && $requestData['partMin']  !== '' ? (int) $requestData['partMin']  : -1;
+            $pMax  = isset($requestData['partMax'])  && $requestData['partMax']  !== '' ? (int) $requestData['partMax']  : -1;
             [$items, $total] = fetch_users(
                 param_string($requestData, 'q'),
                 $limit,
                 ($page - 1) * $limit,
                 param_string($requestData, 'sort'),
-                param_string($requestData, 'direction')
+                param_string($requestData, 'direction'),
+                param_string($requestData, 'fUsername'),
+                param_string($requestData, 'fNome'),
+                param_string($requestData, 'fCognome'),
+                param_string($requestData, 'fEmail'),
+                $qMin, $qMax, $pMin, $pMax
             );
             paginated_response('Utenti caricati correttamente.', $items, $total, $page, $limit);
             break;
@@ -834,6 +1040,10 @@ function handle_request(): void
         case 'search_quizzes':
             $limit = param_limit($requestData);
             $page = param_page($requestData);
+            $questionMin = isset($requestData['questionMin']) && $requestData['questionMin'] !== '' ? (int) $requestData['questionMin'] : -1;
+            $questionMax = isset($requestData['questionMax']) && $requestData['questionMax'] !== '' ? (int) $requestData['questionMax'] : -1;
+            $participationMin = isset($requestData['participationMin']) && $requestData['participationMin'] !== '' ? (int) $requestData['participationMin'] : -1;
+            $participationMax = isset($requestData['participationMax']) && $requestData['participationMax'] !== '' ? (int) $requestData['participationMax'] : -1;
             [$items, $total] = fetch_quizzes(
                 param_string($requestData, 'q'),
                 $limit,
@@ -841,7 +1051,15 @@ function handle_request(): void
                 param_string($requestData, 'sort'),
                 param_string($requestData, 'direction'),
                 param_string($requestData, 'creatore'),
-                param_string($requestData, 'stato')
+                param_string($requestData, 'stato'),
+                param_string($requestData, 'fTitolo'),
+                param_string($requestData, 'dateFrom'),
+                param_string($requestData, 'dateTo'),
+                param_string($requestData, 'codice'),
+                $questionMin,
+                $questionMax,
+                $participationMin,
+                $participationMax
             );
             paginated_response('Quiz caricati correttamente.', $items, $total, $page, $limit);
             break;
@@ -849,6 +1067,10 @@ function handle_request(): void
         case 'search_participations':
             $limit = param_limit($requestData);
             $page = param_page($requestData);
+            $responseMin = isset($requestData['responseMin']) && $requestData['responseMin'] !== '' ? (int) $requestData['responseMin'] : -1;
+            $responseMax = isset($requestData['responseMax']) && $requestData['responseMax'] !== '' ? (int) $requestData['responseMax'] : -1;
+            $scoreMin = isset($requestData['scoreMin']) && $requestData['scoreMin'] !== '' ? (int) $requestData['scoreMin'] : -1;
+            $scoreMax = isset($requestData['scoreMax']) && $requestData['scoreMax'] !== '' ? (int) $requestData['scoreMax'] : -1;
             [$items, $total] = fetch_participations(
                 param_string($requestData, 'q'),
                 $limit,
@@ -858,7 +1080,14 @@ function handle_request(): void
                 param_string($requestData, 'utente'),
                 param_string($requestData, 'quiz'),
                 param_string($requestData, 'dateFrom'),
-                param_string($requestData, 'dateTo')
+                param_string($requestData, 'dateTo'),
+                param_string($requestData, 'fUtente'),
+                param_string($requestData, 'fTitoloQuiz'),
+                param_string($requestData, 'codice'),
+                $responseMin,
+                $responseMax,
+                $scoreMin,
+                $scoreMax
             );
             paginated_response('Partecipazioni caricate correttamente.', $items, $total, $page, $limit);
             break;
