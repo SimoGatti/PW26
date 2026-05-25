@@ -65,6 +65,143 @@ select.form-input {
     cursor: pointer;
 }
 
+/* ─── Date Picker ─────────────────────────── */
+.date-picker-field {
+    position: relative;
+}
+
+.date-picker-panel {
+    position: fixed;
+    z-index: 1000;
+    width: min(248px, calc(100vw - 16px));
+    max-height: min(320px, calc(100vh - 16px));
+    padding: 8px;
+    overflow-y: auto;
+    border: 1px solid var(--border, #e7e8ea);
+    border-radius: var(--radius-sm);
+    background: var(--surface, #fff);
+    box-shadow: var(--shadow-md, 0 18px 50px rgba(15, 18, 24, .08));
+    color: var(--text-primary, #202226);
+    font-size: 0.78rem;
+}
+
+.date-picker-panel[hidden] {
+    display: none;
+}
+
+.date-picker-header,
+.date-picker-subheader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.date-picker-subheader {
+    justify-content: center;
+}
+
+.date-picker-title {
+    flex: 1;
+    min-width: 0;
+    min-height: 26px;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    border: 0;
+    background: transparent;
+    color: var(--text-primary, #202226);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.date-picker-title:hover {
+    background: var(--accent-light, #f1f2f4);
+    color: var(--accent, #202226);
+}
+
+.date-picker-nav {
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    padding-inline: 0;
+}
+
+.date-picker-panel .button {
+    min-height: 26px;
+    padding: 3px 7px;
+    font-size: 0.74rem;
+    background: var(--surface, #fff);
+}
+
+.date-picker-panel .button:hover {
+    background: var(--accent-light, #f1f2f4);
+}
+
+.date-picker-weekdays,
+.date-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.date-picker-weekdays {
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.date-picker-grid-months,
+.date-picker-grid-years {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.date-picker-cell {
+    min-height: 24px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary, #202226);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.76rem;
+}
+
+.date-picker-cell-large {
+    min-height: 30px;
+}
+
+.date-picker-cell:hover {
+    border-color: var(--border, #e7e8ea);
+    background: var(--accent-light, #f1f2f4);
+}
+
+.date-picker-cell.is-outside {
+    color: var(--text-secondary);
+    opacity: .55;
+}
+
+.date-picker-cell.is-today {
+    border-color: var(--accent, #202226);
+}
+
+.date-picker-cell.is-selected {
+    background: var(--accent, #202226);
+    color: #fff;
+}
+
+.date-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+}
+
 /* ─── Buttons ─────────────────────────────── */
 .button {
     display: inline-flex;
@@ -251,14 +388,47 @@ select.form-input {
     color: #1e40af;
 }
 
-/* ─── Pagination ──────────────────────────── */
-.pagination {
+/* ─── Results toolbar / pagination ────────── */
+.results-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 4px 4px;
+    padding: 12px 4px;
     flex-wrap: wrap;
+}
+
+.results-toolbar-top {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+}
+
+.results-toolbar-bottom {
+    justify-content: flex-end;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+}
+
+.results-toolbar-left,
+.results-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.results-toolbar-left {
+    min-width: max-content;
+}
+
+.results-toolbar-right {
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
 }
 
 .pagination-info {
@@ -269,6 +439,27 @@ select.form-input {
 .pagination-buttons {
     display: flex;
     gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.pagination-page {
+    min-width: 32px;
+    padding-inline: 10px;
+}
+
+.pagination-page.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    cursor: default;
+}
+
+.pagination-ellipsis {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    padding: 0 2px;
 }
 
 /* ─── Detail view ─────────────────────────── */
@@ -281,6 +472,29 @@ select.form-input {
 .detail-header {
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
+}
+
+.detail-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.detail-header-top .back-button,
+.detail-header-top .detail-title {
+    margin-bottom: 0;
+}
+
+.detail-header-top .detail-title {
+    min-width: 0;
+}
+
+.detail-header-top .back-button {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .detail-title {
@@ -301,7 +515,6 @@ select.form-input {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 20px;
-    margin-bottom: 16px;
 }
 
 .detail-meta-item {
@@ -449,4 +662,283 @@ select.form-input {
     padding: 40px 16px;
     color: var(--text-secondary);
     font-size: 1rem;
+}
+
+/* ─── Numeric / date alignment ────────────── */
+.data-table td.col-numeric,
+.data-table th.col-numeric {
+    text-align: right;
+}
+
+/* ─── Sortable column headers ─────────────── */
+.data-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.data-table th.sortable:hover {
+    color: var(--text-primary);
+}
+
+.sort-icon {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.7rem;
+    opacity: 0.45;
+    transition: opacity .12s;
+}
+
+.data-table th.sort-asc .sort-icon,
+.data-table th.sort-desc .sort-icon {
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* ─── Back button ─────────────────────────── */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    width: auto;
+    max-width: max-content;
+    padding: 5px 11px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+
+.filter-group {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+}
+
+.filter-group:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.filter-group-title {
+    margin: 0 0 10px;
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.back-button:hover {
+    background: var(--bg);
+    color: var(--text-primary);
+}
+
+/* ─── View mode toggle ────────────────────── */
+.view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.view-toggle-btn {
+    padding: 5px 14px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+    border-left: 1px solid var(--border);
+}
+
+.view-toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* ─── Dual Range Slider ─────────────────────── */
+.dual-range {
+    position: relative;
+    width: 100%;
+    height: 24px;
+}
+
+.dual-range input[type="range"] {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%);
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    margin: 0;
+}
+
+.dual-range input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+}
+
+/* Solo il primo input mostra la traccia di base */
+.dual-range input[type="range"]:last-child::-webkit-slider-runnable-track {
+    background: transparent;
+}
+
+.dual-range input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    pointer-events: auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    margin-top: -6px; /* (track height 4 - thumb height 16) / 2 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.range-labels {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: normal;
+    float: right;
+}
+
+.range-anchors {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 4px;
+    padding: 0 6px;
+}
+
+.range-anchors span {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+/* ─── Question filter bar ─────────────────── */
+.question-filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+}
+
+.question-filter-bar input {
+    padding: 5px 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.82rem;
+    flex: 1;
+    min-width: 100px;
+}
+
+.question-filter-bar input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.question-filter-bar label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.question-card.hidden-by-filter {
+    display: none;
+}
+
+/* ─── Hide-solutions mode ─────────────────── */
+/*
+  In "nascondi soluzioni" non si nasconde la risposta,
+  si rimuove solo l'evidenziazione visiva (sfondo verde)
+  e si nasconde il punteggio.
+*/
+.solutions-hidden .answer-correct {
+    background: var(--surface);
+    border-color: var(--border);
+}
+
+.solutions-hidden .answer-selected-correct {
+    background: var(--surface);
+    border-color: var(--border);
+    font-weight: normal;
+}
+
+.solutions-hidden .answer-score {
+    display: none;
+}
+
+/* ─── Pagination with inline limit ────────── */
+.pagination-limit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.pagination-limit select {
+    padding: 3px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* ─── Inline edit row ─────────────────────── */
+.inline-edit-input {
+    width: 100%;
+    padding: 4px 6px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+    /* Stessa altezza della cella normale per evitare layout shift */
+    height: 30px;
+    line-height: 1;
+}
+
+tr.editing-row td {
+    background: var(--accent-light);
+    vertical-align: middle;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+/* ─── Table top bar ───────────────────────── */
+.table-top-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
