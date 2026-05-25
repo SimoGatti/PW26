@@ -1,128 +1,144 @@
 /* ─── CRUD Utenti ─────────────────────────────────── */
 
-let editUsername = null;
+let manageSortState = { key: 'cognome', dir: 'ASC' };
+let currentManageItems = [];
 
 async function renderManageUsers() {
-    clearFilters();
-    renderManageUserFilters();
+    renderManageUserFilters(() => refreshManageUsers());
     renderLoading();
+    await refreshManageUsers();
+}
 
+async function refreshManageUsers() {
     try {
-        const result = await apiCall('manage_users', { q: '', limit: 100 });
-        renderManageUsersTable(result.data.items || []);
+        const q = getFilterValue('manage-filter-q');
+
+        const result = await apiCall('manage_users', {
+            q,
+            limit: 100,
+            sort: manageSortState.key,
+            direction: manageSortState.dir
+        });
+        currentManageItems = result.data.items || [];
+
+        renderManageUsersTable();
     } catch (err) {
         renderError(err.message);
     }
 }
 
-function renderManageUsersTable(items) {
+function renderManageUsersTable() {
     const container = document.createElement('div');
-
-    if (!items || items.length === 0) {
-        container.innerHTML = '<p class="empty-state">Nessun utente trovato.</p>';
-        centerContent.replaceChildren(container);
-        return;
-    }
-
     const heading = document.createElement('h3');
     heading.className = 'section-heading';
     heading.textContent = 'Elenco Utenti';
     container.appendChild(heading);
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'table-wrapper';
+    const columns = [
+        { label: 'Username', sortKey: 'nomeUtente', key: 'nomeUtente' },
+        { label: 'Nome',     sortKey: 'nome',       key: 'nome' },
+        { label: 'Cognome',  sortKey: 'cognome',    key: 'cognome' },
+        { label: 'Email',                           key: 'email' },
+        { label: 'Quiz',     sortKey: 'numeroQuizCreati',     key: 'numeroQuizCreati', numeric: true },
+        { label: 'Part.',    sortKey: 'numeroPartecipazioni', key: 'numeroPartecipazioni', numeric: true },
+        { label: 'Azioni',   render: r => {
+            const div = document.createElement('div');
+            div.className = 'actions-cell';
+            const btnEdit = document.createElement('button');
+            btnEdit.className = 'button button-secondary button-sm btn-edit';
+            btnEdit.textContent = 'Modifica';
+            btnEdit.addEventListener('click', (e) => startInlineEdit(e.target.closest('tr'), r));
 
-    const table = document.createElement('table');
-    table.className = 'data-table';
-    table.innerHTML = `
-        <thead><tr>
-            <th>Username</th><th>Nome</th><th>Cognome</th><th>Email</th>
-            <th>Quiz</th><th>Part.</th><th>Azioni</th>
-        </tr></thead>
-    `;
+            const btnDel = document.createElement('button');
+            btnDel.className = 'button button-danger button-sm btn-delete';
+            btnDel.textContent = 'Elimina';
+            btnDel.addEventListener('click', () => handleDeleteUser(r.nomeUtente));
 
-    const tbody = document.createElement('tbody');
-    items.forEach(user => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${user.nomeUtente}</td>
-            <td>${user.nome}</td>
-            <td>${user.cognome}</td>
-            <td>${user.email}</td>
-            <td>${user.numeroQuizCreati ?? 0}</td>
-            <td>${user.numeroPartecipazioni ?? 0}</td>
-            <td class="actions-cell">
-                <button class="button button-secondary button-sm btn-edit" data-username="${user.nomeUtente}">Modifica</button>
-                <button class="button button-danger button-sm btn-delete" data-username="${user.nomeUtente}">Elimina</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+            div.appendChild(btnEdit);
+            div.appendChild(btnDel);
+            return div;
+        }}
+    ];
+
+    const wrapper = renderTable({
+        columns,
+        rows: currentManageItems,
+        emptyMsg: 'Nessun utente trovato.',
+        sortState: manageSortState,
+        onSort: (key, dir) => {
+            manageSortState.key = key;
+            manageSortState.dir = dir;
+            refreshManageUsers();
+        }
     });
-    table.appendChild(tbody);
-    wrapper.appendChild(table);
+
     container.appendChild(wrapper);
     centerContent.replaceChildren(container);
-
-    container.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => startEditUser(btn.dataset.username));
-    });
-    container.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', () => handleDeleteUser(btn.dataset.username));
-    });
 }
 
-async function startEditUser(username) {
-    editUsername = username;
-    try {
-        const result = await apiCall('get_user', { nomeUtente: username });
-        const user = result.data;
+/**
+ * Trasforma la riga in modalità editing inline.
+ */
+function startInlineEdit(tr, user) {
+    tr.classList.add('editing-row');
+    tr.innerHTML = `
+        <td><strong>${user.nomeUtente}</strong></td>
+        <td><input class="inline-edit-input" id="ie-nome"    value="${escapeHtml(user.nome)}"></td>
+        <td><input class="inline-edit-input" id="ie-cognome" value="${escapeHtml(user.cognome)}"></td>
+        <td><input class="inline-edit-input" id="ie-email"   value="${escapeHtml(user.email)}" type="email"></td>
+        <td class="col-numeric">${user.numeroQuizCreati ?? 0}</td>
+        <td class="col-numeric">${user.numeroPartecipazioni ?? 0}</td>
+        <td class="actions-cell">
+            <button class="button button-primary button-sm btn-save">Salva</button>
+            <button class="button button-secondary button-sm btn-cancel">Annulla</button>
+        </td>
+    `;
 
-        document.getElementById('crud-username').value = user.nomeUtente;
-        document.getElementById('crud-username').disabled = true;
-        document.getElementById('crud-nome').value = user.nome;
-        document.getElementById('crud-cognome').value = user.cognome;
-        document.getElementById('crud-email').value = user.email;
+    tr.querySelector('.btn-cancel').addEventListener('click', () => {
+        renderManageUsersTable(); // Ripristina la riga ri-renderizzando la tabella locale
+    });
 
-        document.getElementById('crud-create-btn').textContent = 'Aggiorna Utente';
-        document.getElementById('crud-feedback').hidden = true;
+    tr.querySelector('.btn-save').addEventListener('click', async () => {
+        const nome    = tr.querySelector('#ie-nome').value.trim();
+        const cognome = tr.querySelector('#ie-cognome').value.trim();
+        const email   = tr.querySelector('#ie-email').value.trim();
 
-        if (!document.getElementById('crud-cancel-btn')) {
-            const cancelBtn = document.createElement('button');
-            cancelBtn.id = 'crud-cancel-btn';
-            cancelBtn.className = 'button button-secondary';
-            cancelBtn.textContent = 'Annulla';
-            cancelBtn.addEventListener('click', cancelEditUser);
-            document.querySelector('.filter-actions').appendChild(cancelBtn);
+        if (!nome || !cognome || !email) {
+            showCrudFeedback('error', 'Nome, cognome e email sono obbligatori.');
+            return;
         }
-    } catch (err) {
-        showCrudFeedback('error', err.message);
-    }
+
+        try {
+            await apiPost('update_user', { nomeUtente: user.nomeUtente, nome, cognome, email });
+            showCrudFeedback('success', `Utente ${user.nomeUtente} aggiornato.`);
+            await refreshManageUsers();
+        } catch (err) {
+            showCrudFeedback('error', err.message);
+        }
+    });
 }
 
-function cancelEditUser() {
-    editUsername = null;
-    document.getElementById('crud-username').value = '';
-    document.getElementById('crud-username').disabled = false;
-    document.getElementById('crud-nome').value = '';
-    document.getElementById('crud-cognome').value = '';
-    document.getElementById('crud-email').value = '';
-    document.getElementById('crud-create-btn').textContent = 'Crea Utente';
-    document.getElementById('crud-cancel-btn')?.remove();
-    document.getElementById('crud-feedback').hidden = true;
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function showCrudFeedback(type, message) {
     const feedback = document.getElementById('crud-feedback');
-    feedback.hidden = false;
+    if (!feedback) return;
+    feedback.hidden  = false;
     feedback.className = `alert alert-${type}`;
     feedback.textContent = message;
 }
 
 async function handleCreateUser() {
-    const username = document.getElementById('crud-username').value.trim();
-    const nome = document.getElementById('crud-nome').value.trim();
-    const cognome = document.getElementById('crud-cognome').value.trim();
-    const email = document.getElementById('crud-email').value.trim();
+    const username = document.getElementById('crud-username')?.value.trim();
+    const nome     = document.getElementById('crud-nome')?.value.trim();
+    const cognome  = document.getElementById('crud-cognome')?.value.trim();
+    const email    = document.getElementById('crud-email')?.value.trim();
 
     if (!username || !nome || !cognome || !email) {
         showCrudFeedback('error', 'Tutti i campi sono obbligatori.');
@@ -134,20 +150,13 @@ async function handleCreateUser() {
     }
 
     try {
-        if (editUsername) {
-            await apiPost('update_user', { nomeUtente: editUsername, nome, cognome, email });
-            showCrudFeedback('success', 'Utente aggiornato con successo.');
-            cancelEditUser();
-        } else {
-            await apiPost('create_user', { nomeUtente: username, nome, cognome, email });
-            showCrudFeedback('success', 'Utente creato con successo.');
-            document.getElementById('crud-username').value = '';
-            document.getElementById('crud-nome').value = '';
-            document.getElementById('crud-cognome').value = '';
-            document.getElementById('crud-email').value = '';
-        }
-        const result = await apiCall('manage_users', { q: '', limit: 100 });
-        renderManageUsersTable(result.data.items);
+        await apiPost('create_user', { nomeUtente: username, nome, cognome, email });
+        showCrudFeedback('success', 'Utente creato con successo.');
+        ['crud-username', 'crud-nome', 'crud-cognome', 'crud-email'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        await refreshManageUsers();
     } catch (err) {
         showCrudFeedback('error', err.message);
     }
@@ -156,10 +165,10 @@ async function handleCreateUser() {
 async function handleDeleteUser(username) {
     if (!confirm(`Eliminare l'utente "${username}"?`)) return;
 
+
     try {
         await apiPost('delete_user', { nomeUtente: username });
-        const result = await apiCall('manage_users', { q: '', limit: 100 });
-        renderManageUsersTable(result.data.items);
+        await refreshManageUsers();
     } catch (err) {
         showCrudFeedback('error', err.message);
     }

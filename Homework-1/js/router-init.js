@@ -2,6 +2,7 @@
 
 function navigateTo(view, params = {}) {
     const url = new URL(window.location.href);
+    url.search = '';
     url.searchParams.set('view', view);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
     window.history.pushState({ view, ...params }, '', url.toString());
@@ -33,17 +34,17 @@ async function activateRoute(view, params = {}) {
             break;
         case 'ricerca-utenti':
             clearFilters();
-            renderUserFilters();
+            renderUserFilters(loadUsers, searchState.users.mode);
             loadUsers(1);
             break;
         case 'ricerca-quiz':
             clearFilters();
-            renderQuizFilters();
+            renderQuizFilters(loadQuizzes, searchState.quizzes.mode);
             loadQuizzes(1);
             break;
         case 'ricerca-partecipazioni':
             clearFilters();
-            renderParticipationFilters();
+            renderParticipationFilters(loadParticipations, searchState.participations.mode);
             loadParticipations(1);
             break;
         case 'gestione-utenti':
