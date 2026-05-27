@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
 generate_mysql.py
-Legge database_quiz_ITA.json e genera quiz_mysql.sql (MySQL-compatible).
+Legge database_quiz_ITA.json e genera:
+  - quiz_mysql.sql  (MySQL-compatible, identico a prima)
+  - quiz_data.ods   (OpenDocument Spreadsheet, un foglio per tabella)
+
 Ogni quiz contiene al massimo MAX_DOMANDE domande (campionate casualmente).
-Un TRIGGER MySQL garantisce il vincolo anche lato database.
 """
 
 import json
@@ -15,7 +17,8 @@ from datetime import date, timedelta
 # Configurazione
 # ---------------------------------------------------------------------------
 JSON_PATH    = "database_quiz_ITA.json"
-OUT_PATH     = "quiz_mysql.sql"
+OUT_SQL      = "quiz_mysql.sql"
+OUT_ODS      = "quiz_data.ods"
 DB_NAME      = "my_namenotfound"
 MAX_DOMANDE  = 20          # vincolo: max domande per quiz
 random.seed(42)
@@ -72,7 +75,7 @@ def rand_date(start: date, end: date) -> date:
 # ---------------------------------------------------------------------------
 # Carica e raggruppa JSON
 # ---------------------------------------------------------------------------
-print(f"[1/4] Caricamento {JSON_PATH} …")
+print(f"[1/5] Caricamento {JSON_PATH} …")
 with open(JSON_PATH, "r", encoding="utf-8") as f:
     raw = json.load(f)
 
@@ -92,7 +95,7 @@ def titolo_quiz(cat: str, n: int) -> str:
 # ---------------------------------------------------------------------------
 # Costruzione strutture dati
 # ---------------------------------------------------------------------------
-print(f"[2/4] Costruzione dati (max {MAX_DOMANDE} domande/quiz) …")
+print(f"[2/5] Costruzione dati (max {MAX_DOMANDE} domande/quiz) …")
 
 utenti_nomi = [u[0] for u in UTENTI]
 base_start  = date(2024, 1, 1)
@@ -173,9 +176,9 @@ print(f"      {len(quiz_list)} quiz, {len(domande_list)} domande, "
       f"{len(ruq_list)} risposte utente.")
 
 # ---------------------------------------------------------------------------
-# Generazione SQL
+# Generazione SQL  (identico alla versione precedente)
 # ---------------------------------------------------------------------------
-print("[3/4] Generazione SQL …")
+print(f"[3/5] Generazione SQL → {OUT_SQL} …")
 
 BATCH = 500
 L = []
@@ -204,6 +207,7 @@ ln("""CREATE TABLE `Utente` (
     `nome`       VARCHAR(255) NOT NULL,
     `cognome`    VARCHAR(255) NOT NULL,
     `email`      VARCHAR(255) NOT NULL,
+    `Attivo`     TINYINT(1)   NOT NULL DEFAULT 1,
     PRIMARY KEY (`nomeUtente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """)
@@ -294,13 +298,106 @@ insert_block("RispostaUtenteQuiz",["partecipazione","quiz","domanda","risposta"]
 ln("SET foreign_key_checks = 1;")
 ln()
 
-# Scrittura file
-with open(OUT_PATH, "w", encoding="utf-8") as f:
+with open(OUT_SQL, "w", encoding="utf-8") as f:
     f.write("\n".join(L))
 
 import os
-size_kb = os.path.getsize(OUT_PATH) / 1024
-print(f"[4/4] Scritto '{OUT_PATH}' ({size_kb:.0f} KB)")
+size_kb = os.path.getsize(OUT_SQL) / 1024
+print(f"      Scritto '{OUT_SQL}' ({size_kb:.0f} KB)")
+
+# ---------------------------------------------------------------------------
+# Generazione ODS
+# ---------------------------------------------------------------------------
+print(f"[4/5] Generazione ODS → {OUT_ODS} …")
+
+try:
+    # pyrefly: ignore [missing-import]
+    from odf.opendocument import OpenDocumentSpreadsheet
+    # pyrefly: ignore [missing-import]
+    from odf.style import Style, TextProperties, 
+    # pyrefly: ignore [missing-import]
+    from odf.table import Table, TableRow, TableCell, TableColumn
+    # pyrefly: ignore [missing-import]
+    from odf.text import P
+    # pyrefly: ignore [missing-import]   
+    from odf import style as odfstyle
+except ImportError:
+    print("      ⚠️  Libreria 'odfpy' non trovata. Installala con:")
+    print("         pip install odfpy")
+    print("      Il file SQL è stato comunque generato correttamente.")
+    raise SystemExit(1)
+
+doc = OpenDocumentSpreadsheet()
+
+# --- Stili ---
+# Intestazione: grassetto
+header_style = Style(name="Header", family="table-cell")
+header_style.addElement(TextProperties(fontweight="bold"))
+doc.automaticstyles.addElement(header_style)
+
+# Cella normale
+cell_style = Style(name="Default", family="table-cell")
+doc.automaticstyles.addElement(cell_style)
+
+def make_cell(value, style_name="Default"):
+    """Crea una TableCell con testo."""
+    tc = TableCell(stylename=style_name)
+    tc.addElement(P(text=str(value) if value is not None else ""))
+    return tc
+
+def add_sheet(doc, sheet_name, headers, rows):
+    """Aggiunge un foglio al documento ODS."""
+    table = Table(name=sheet_name)
+
+    # Riga di intestazione
+    header_row = TableRow()
+    for h in headers:
+        header_row.addElement(make_cell(h, style_name="Header"))
+    table.addElement(header_row)
+
+    # Righe dati
+    for row in rows:
+        tr = TableRow()
+        for val in row:
+            tr.addElement(make_cell(val))
+        table.addElement(tr)
+
+    doc.spreadsheet.addElement(table)
+    print(f"      Foglio '{sheet_name}': {len(rows)} righe")
+
+# Un foglio per ogni tabella, stesso ordine dell'SQL
+add_sheet(doc, "Utente",
+    headers=["nomeUtente", "nome", "cognome", "email"],
+    rows=UTENTI)
+
+add_sheet(doc, "Quiz",
+    headers=["codice", "creatore", "titolo", "dataInizio", "dataFine"],
+    rows=quiz_list)
+
+add_sheet(doc, "Domanda",
+    headers=["quiz", "numero", "testo"],
+    rows=domande_list)
+
+add_sheet(doc, "Risposta",
+    headers=["quiz", "domanda", "numero", "testo", "tipo", "punteggio"],
+    rows=risposte_list)
+
+add_sheet(doc, "Partecipazione",
+    headers=["codice", "utente", "quiz", "data"],
+    rows=part_list)
+
+add_sheet(doc, "RispostaUtenteQuiz",
+    headers=["partecipazione", "quiz", "domanda", "risposta"],
+    rows=ruq_list)
+
+doc.save(OUT_ODS)
+size_ods_kb = os.path.getsize(OUT_ODS) / 1024
+print(f"      Scritto '{OUT_ODS}' ({size_ods_kb:.0f} KB)")
+
+# ---------------------------------------------------------------------------
+# Riepilogo finale
+# ---------------------------------------------------------------------------
+print(f"\n[5/5] Completato.")
 print()
 print("Riepilogo:")
 print(f"  Utente:            {len(UTENTI)}")
@@ -310,4 +407,5 @@ print(f"  Risposta:          {len(risposte_list)}")
 print(f"  Partecipazione:    {len(part_list)}")
 print(f"  RispostaUtenteQuiz:{len(ruq_list)}")
 print()
-print(f"✅  {OUT_PATH} pronto per AlterVista!")
+print(f"✅  {OUT_SQL} pronto per AlterVista/MySQL!")
+print(f"✅  {OUT_ODS} pronto per LibreOffice / Excel!")

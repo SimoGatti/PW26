@@ -6,3 +6,4 @@ prova.php
 *.env
 .obsidian/
 experiments/
+/Homework-1/data/.venv/

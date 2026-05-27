@@ -18,6 +18,7 @@ CREATE TABLE `Utente` (
     `nome`       VARCHAR(255) NOT NULL,
     `cognome`    VARCHAR(255) NOT NULL,
     `email`      VARCHAR(255) NOT NULL,
+    `Attivo`     TINYINT(1)   NOT NULL DEFAULT 1,
     PRIMARY KEY (`nomeUtente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
