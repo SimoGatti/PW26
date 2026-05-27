@@ -132,11 +132,11 @@ header {
 
 .main-content {
     display: grid;
-    grid-template-columns: 1.35fr minmax(0, 5.15fr) 1.5fr;
+    grid-template-columns: minmax(150px, 1.35fr) minmax(360px, 5.15fr) minmax(140px, 1.5fr);
     gap: var(--panel-gap);
     min-width: 0;
     min-height: 0;
-    overflow: hidden;
+    overflow: auto hidden;
 }
 
 h2 {

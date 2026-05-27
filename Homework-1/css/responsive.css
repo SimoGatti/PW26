@@ -4,27 +4,13 @@
 
 @media (max-width: 1100px) {
     .main-content {
-        grid-template-columns: minmax(170px, .85fr) minmax(0, 4.2fr) minmax(140px, .75fr);
+        grid-template-columns: minmax(140px, .95fr) minmax(340px, 4.6fr) minmax(130px, .9fr);
     }
 }
 
 @media (max-width: 900px) {
     .main-content {
-        grid-template-columns: 1fr;
-        grid-template-rows: minmax(420px, auto) auto auto;
-        overflow-y: auto;
-    }
-
-    .center {
-        order: 1;
-    }
-
-    .left {
-        order: 2;
-    }
-
-    .right {
-        order: 3;
+        grid-template-columns: minmax(132px, .9fr) minmax(320px, 4.8fr) minmax(124px, .85fr);
     }
 
     .panel-body {
@@ -32,7 +18,7 @@
     }
 
     .center .panel-body {
-        min-height: min(62vh, 680px);
+        min-height: 0;
     }
 
     .left .panel-body {
@@ -68,6 +54,7 @@
 
     .main-content {
         gap: 6px;
+        grid-template-columns: minmax(124px, .85fr) minmax(300px, 5fr) minmax(116px, .8fr);
     }
 
     .home-card {
@@ -186,12 +173,11 @@ footer {
 
 @media (max-width: 720px) {
     body {
-        overflow: auto;
+        overflow: hidden;
     }
 
     .main-content {
-        grid-template-columns: 1fr;
-        overflow: visible;
+        overflow: auto hidden;
     }
 
     .panel {
