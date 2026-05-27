@@ -268,6 +268,36 @@ select.form-input {
     background: var(--bg);
 }
 
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.icon-button:hover {
+    background: var(--accent-light);
+}
+
+.icon-button svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.detail-action-col {
+    width: 36px;
+    min-width: 36px;
+    text-align: left;
+}
+
 /* ─── Alerts ──────────────────────────────── */
 .alert {
     padding: 12px 16px;
@@ -438,15 +468,24 @@ select.form-input {
 
 .pagination-buttons {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-end;
+    min-height: 30px;
 }
 
 .pagination-page {
-    min-width: 32px;
-    padding-inline: 10px;
+    width: 28px;
+    min-width: 28px;
+    padding-inline: 0;
+}
+
+.pagination-nav-btn {
+    width: 30px;
+    min-width: 30px;
+    padding-inline: 0;
+    font-size: 1rem;
 }
 
 .pagination-page.active {
@@ -562,6 +601,12 @@ select.form-input {
     gap: 12px;
     align-items: baseline;
     margin-bottom: 10px;
+}
+
+.question-hint {
+    margin: -2px 0 8px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
 }
 
 .question-number {

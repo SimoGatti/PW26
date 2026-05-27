@@ -2,14 +2,37 @@
    Responsive
    ═══════════════════════════════════════════════════════ */
 
+@media (max-width: 1100px) {
+    .main-content {
+        grid-template-columns: minmax(170px, .85fr) minmax(0, 4.2fr) minmax(140px, .75fr);
+    }
+}
+
 @media (max-width: 900px) {
     .main-content {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: minmax(420px, auto) auto auto;
+        overflow-y: auto;
+    }
+
+    .center {
+        order: 1;
+    }
+
+    .left {
+        order: 2;
+    }
+
+    .right {
+        order: 3;
     }
 
     .panel-body {
         padding: 14px 12px;
+    }
+
+    .center .panel-body {
+        min-height: min(62vh, 680px);
     }
 
     .left .panel-body {
@@ -82,7 +105,7 @@
     }
 
     .pagination-buttons .button {
-        flex: 1;
+        flex: 0 0 auto;
     }
 
     footer {
@@ -172,6 +195,6 @@ footer {
     }
 
     .panel {
-        min-height: 220px;
+        min-height: 0;
     }
 }
