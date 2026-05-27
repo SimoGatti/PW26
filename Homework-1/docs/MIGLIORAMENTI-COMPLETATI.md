@@ -208,3 +208,42 @@ Input `manage-filter-q` con debounce in sidebar che chiama `refreshManageUsers()
 - `user_stats` su Altervista risponde HTTP 200 con `quizMax` e `partMax`.
 - I filtri separati di `search_quizzes` (`fTitolo`, `creatore`, `dateFrom`, `dateTo`) risultano applicati sul remoto.
 - I filtri separati di `search_participations` (`fUtente`, `fTitoloQuiz`, `dateFrom`, `dateTo`) risultano applicati sul remoto.
+
+---
+
+## Eseguiti in sessione del 2026-05-27
+
+### Generico
+- **Paginazione stabile e compatta:** in `ui.js` i pulsanti precedente/successivo sono sempre renderizzati e disabilitati quando non utilizzabili, così la toolbar non cambia larghezza. I pulsanti numerici sono stati ridotti e il navigatore mostra meno pagine attorno a quella corrente. In `components.css` sono state fissate dimensioni compatte per `.pagination-page` e `.pagination-nav-btn`.
+- **Ancore slider dinamiche:** in `filters.js` è stata introdotta `buildRangeAnchors(min, max)`, che genera tutte le ancore per range piccoli e percentili univoci per range grandi, evitando duplicati come 0-3 con due valori uguali.
+- **Date in formato GG/MM/AAAA:** il calendario custom ora scrive `gg/mm/aaaa` negli input; `filters.js` converte il formato display in ISO `yyyy-mm-dd` solo prima di inviare i parametri all'API, mantenendo il confronto con i dati DB. Aggiornato anche il prototipo in `experiments/date-picker.html` e `experiments/date-picker.js`.
+- **Indietro dinamico:** `router-init.js` salva la route di provenienza nello stato history; `createBackButton` usa `navigateBack`, quindi i dettagli tornano alla schermata reale da cui l'utente è arrivato, con fallback solo se manca lo stato.
+
+### Ricerca Utenti
+- **Soft delete utenti con campo Attivo:** in `api.php` è stato aggiunto `ensure_user_active_column()`, che garantisce la presenza della colonna `Attivo` su `Utente`. `delete_user` ora imposta `Attivo = 0`, mentre ricerche utenti, gestione utenti e selettore utente mostrano solo record attivi.
+
+### Dettaglio Quiz
+- **Avviso partecipazione senza utente selezionato:** se l'utente prova a partecipare senza selezionare un utente, `details.js` mostra una schermata di avviso con pulsante Indietro dinamico e pulsante Continua. La selezione dell'utente dal pannello sinistro viene intercettata e abilita l'accesso al quiz dalla stessa schermata.
+- **Limite risposte selezionabili:** in `play.js` ogni domanda calcola il numero di risposte corrette e impedisce di selezionare più checkbox di quel limite. In `api.php` la stessa regola viene validata lato server durante il salvataggio delle risposte.
+
+### Ricerca Quiz
+- **Pulsante dettaglio esplicito:** aggiunta una colonna azione fissa a sinistra, sia compatta sia estesa, con pulsante SVG leggero per aprire il dettaglio quiz.
+
+### Ricerca Partecipazioni
+- **Pulsante dettaglio esplicito e no click riga:** aggiunta una colonna azione con lente SVG per aprire il dettaglio partecipazione. Rimossa la navigazione cliccando lo spazio vuoto della riga; restano cliccabili solo i link espliciti e il nuovo pulsante.
+
+### Gestione Utenti
+- **Edit inline senza spostamenti:** gli input inline mantengono dimensioni controllate tramite `.inline-edit-input`; la riga conserva la struttura tabellare e l'editing resta stabile.
+- **Username modificabile con cascata manuale:** `users-crud.js` rende editabile anche lo username. `api.php` gestisce il cambio creando il nuovo record utente, aggiornando `Quiz.creatore` e `Partecipazione.utente`, poi rimuovendo il vecchio record, preservando le foreign key anche senza cascade DB.
+
+### Generico
+- **Dettagli utenti eliminati ancora visitabili:** `fetch_user_detail` in `api.php` non filtra piu' per `Attivo = 1`, quindi i link storici da quiz creati e partecipazioni continuano ad aprire il dettaglio utente anche dopo il soft delete. Il dettaglio mostra un badge "Utente eliminato"; ricerche, gestione e selettore restano invece limitati agli utenti attivi.
+- **Schema SQL riallineato:** `data/quiz_mysql.sql` e `data/generate_mysql.py` includono la colonna `Attivo TINYINT(1) NOT NULL DEFAULT 1` nella tabella `Utente`, coerente con la migrazione automatica gia' presente in `api.php`.
+- **Toggle compatta/estesa senza reset filtri:** `filters.js` espone snapshot/restore dei valori di input e select; `search.js` e `details.js` passano i valori correnti quando cambiano modalita'. Ordinamento e direzione restano nello stato gia' esistente delle schermate.
+- **Layout responsive con centro prioritario:** `responsive.css` riduce prima le colonne laterali sotto 1100px e sotto 900px porta la colonna centrale in cima, con altezza minima dedicata, cosi' quando la finestra viene stretta la componente principale resta la piu' visibile.
+
+### Ricerca Quiz
+- **Icona play per dettaglio quiz:** `createDetailButton` in `ui.js` ora accetta un tipo icona; le azioni di dettaglio quiz in `search.js` usano il triangolo play al posto della lente.
+
+### Gestione Utenti
+- **Annulla edit per singola riga:** `users-crud.js` separa la costruzione delle azioni riga e ripristina solo la riga in editing con i dati originali, senza ridisegnare tutta la tabella e senza chiudere eventuali altre righe in modifica.

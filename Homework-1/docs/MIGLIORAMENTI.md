@@ -6,18 +6,15 @@ Completare i miglioramenti e tracciare per ogni miglioramento completato tutta l
 
 ## generico
 
-
 ## home
 
 
 ## ricerca-utenti
 
-
 ## dettaglio-utenti
 
 
 ## dettaglio-quiz
-
 
 ## dettaglio-partecipazione
 
@@ -27,6 +24,4 @@ Completare i miglioramenti e tracciare per ogni miglioramento completato tutta l
 
 ## ricerca-partecipazioni
 
-
 ## gestione-utenti
-

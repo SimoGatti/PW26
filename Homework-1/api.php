@@ -69,6 +69,19 @@ function db(): PDO
     return $pdo;
 }
 
+function ensure_user_active_column(): void
+{
+    static $done = false;
+    if ($done) return;
+
+    $pdo = db();
+    $stmt = $pdo->query("SHOW COLUMNS FROM Utente LIKE 'Attivo'");
+    if (!$stmt->fetch()) {
+        $pdo->exec('ALTER TABLE Utente ADD COLUMN Attivo TINYINT(1) NOT NULL DEFAULT 1');
+    }
+    $done = true;
+}
+
 function request_data(): array
 {
     $json = json_decode((string) file_get_contents('php://input'), true);
@@ -134,8 +147,9 @@ function fetch_home_stats(): array
 
 function fetch_usernames(int $limit): array
 {
+    ensure_user_active_column();
     $statement = db()->query(
-        'SELECT nomeUtente FROM Utente ORDER BY nomeUtente ASC LIMIT ' . $limit
+        'SELECT nomeUtente FROM Utente WHERE Attivo = 1 ORDER BY nomeUtente ASC LIMIT ' . $limit
     );
 
     return $statement->fetchAll();
@@ -143,12 +157,27 @@ function fetch_usernames(int $limit): array
 
 function fetch_user_stats(): array
 {
+    ensure_user_active_column();
     $pdo = db();
     $quizMax = (int) $pdo->query('
-        SELECT COALESCE(MAX(c),0) FROM (SELECT COUNT(*) AS c FROM Quiz GROUP BY creatore) t
+        SELECT COALESCE(MAX(c),0)
+        FROM (
+            SELECT COUNT(q.codice) AS c
+            FROM Utente u
+            LEFT JOIN Quiz q ON q.creatore = u.nomeUtente
+            WHERE u.Attivo = 1
+            GROUP BY u.nomeUtente
+        ) t
     ')->fetchColumn();
     $partMax = (int) $pdo->query('
-        SELECT COALESCE(MAX(c),0) FROM (SELECT COUNT(*) AS c FROM Partecipazione GROUP BY utente) t
+        SELECT COALESCE(MAX(c),0)
+        FROM (
+            SELECT COUNT(p.codice) AS c
+            FROM Utente u
+            LEFT JOIN Partecipazione p ON p.utente = u.nomeUtente
+            WHERE u.Attivo = 1
+            GROUP BY u.nomeUtente
+        ) t
     ')->fetchColumn();
     return ['quizMax' => $quizMax, 'partMax' => $partMax];
 }
@@ -209,6 +238,7 @@ function fetch_users(
     string $fUsername = '', string $fNome = '', string $fCognome = '', string $fEmail = '',
     int $quizMin = -1, int $quizMax = -1, int $partMin = -1, int $partMax = -1
 ): array {
+    ensure_user_active_column();
     $sort = param_sort($sort, ['nomeUtente', 'nome', 'cognome', 'email', 'numeroQuizCreati', 'numeroPartecipazioni'], 'cognome');
     $dir  = param_direction($direction);
 
@@ -222,7 +252,7 @@ function fetch_users(
     ];
     $orderClause = $orderMap[$sort] ?? 'u.cognome ASC, u.nome ASC';
 
-    $conditions = [];
+    $conditions = ['u.Attivo = 1'];
     $params     = [];
 
     // Ricerca globale (retrocompatibile)
@@ -558,6 +588,7 @@ function validate_email(string $email): bool
 
 function create_user(string $nomeUtente, string $nome, string $cognome, string $email): void
 {
+    ensure_user_active_column();
     if ($nomeUtente === '' || $nome === '' || $cognome === '') {
         respond(400, 'error', 'Tutti i campi obbligatori devono essere compilati.', null);
     }
@@ -574,8 +605,8 @@ function create_user(string $nomeUtente, string $nome, string $cognome, string $
     }
 
     $stmt = $pdo->prepare('
-        INSERT INTO Utente (nomeUtente, nome, cognome, email)
-        VALUES (:nu, :n, :c, :e)
+        INSERT INTO Utente (nomeUtente, nome, cognome, email, Attivo)
+        VALUES (:nu, :n, :c, :e, 1)
     ');
     $stmt->execute([
         'nu' => $nomeUtente,
@@ -594,6 +625,7 @@ function create_user(string $nomeUtente, string $nome, string $cognome, string $
 
 function get_user(string $nomeUtente): void
 {
+    ensure_user_active_column();
     if ($nomeUtente === '') {
         respond(400, 'error', 'Nome utente non specificato.', null);
     }
@@ -601,7 +633,7 @@ function get_user(string $nomeUtente): void
     $stmt = db()->prepare('
         SELECT nomeUtente, nome, cognome, email
         FROM Utente
-        WHERE nomeUtente = :nu
+        WHERE nomeUtente = :nu AND Attivo = 1
     ');
     $stmt->execute(['nu' => $nomeUtente]);
     $user = $stmt->fetch();
@@ -613,10 +645,14 @@ function get_user(string $nomeUtente): void
     respond(200, 'success', 'Utente caricato.', $user);
 }
 
-function update_user(string $nomeUtente, string $nome, string $cognome, string $email): void
+function update_user(string $nomeUtente, string $nuovoNomeUtente, string $nome, string $cognome, string $email): void
 {
+    ensure_user_active_column();
     if ($nomeUtente === '') {
         respond(400, 'error', 'Nome utente non specificato.', null);
+    }
+    if ($nuovoNomeUtente === '') {
+        respond(400, 'error', 'Username obbligatorio.', null);
     }
     if ($nome === '' || $cognome === '') {
         respond(400, 'error', 'Nome e cognome sono obbligatori.', null);
@@ -627,53 +663,63 @@ function update_user(string $nomeUtente, string $nome, string $cognome, string $
 
     $pdo = db();
 
-    $exists = $pdo->prepare('SELECT COUNT(*) FROM Utente WHERE nomeUtente = :nu');
+    $exists = $pdo->prepare('SELECT COUNT(*) FROM Utente WHERE nomeUtente = :nu AND Attivo = 1');
     $exists->execute(['nu' => $nomeUtente]);
     if ((int) $exists->fetchColumn() === 0) {
         respond(404, 'error', 'Utente non trovato.', null);
     }
 
-    $stmt = $pdo->prepare('
-        UPDATE Utente SET nome = :n, cognome = :c, email = :e
-        WHERE nomeUtente = :nu
-    ');
-    $stmt->execute([
-        'nu' => $nomeUtente,
-        'n'  => $nome,
-        'c'  => $cognome,
-        'e'  => $email,
-    ]);
+    if ($nuovoNomeUtente !== $nomeUtente) {
+        $newExists = $pdo->prepare('SELECT COUNT(*) FROM Utente WHERE nomeUtente = :nu');
+        $newExists->execute(['nu' => $nuovoNomeUtente]);
+        if ((int) $newExists->fetchColumn() > 0) {
+            respond(409, 'error', 'Nuovo username già esistente.', null);
+        }
+    }
+
+    $pdo->beginTransaction();
+    try {
+        if ($nuovoNomeUtente === $nomeUtente) {
+            $stmt = $pdo->prepare('
+                UPDATE Utente SET nome = :n, cognome = :c, email = :e
+                WHERE nomeUtente = :nu
+            ');
+            $stmt->execute(['nu' => $nomeUtente, 'n' => $nome, 'c' => $cognome, 'e' => $email]);
+        } else {
+            $insert = $pdo->prepare('
+                INSERT INTO Utente (nomeUtente, nome, cognome, email, Attivo)
+                VALUES (:newNu, :n, :c, :e, 1)
+            ');
+            $insert->execute(['newNu' => $nuovoNomeUtente, 'n' => $nome, 'c' => $cognome, 'e' => $email]);
+
+            $updateQuiz = $pdo->prepare('UPDATE Quiz SET creatore = :newNu WHERE creatore = :oldNu');
+            $updateQuiz->execute(['newNu' => $nuovoNomeUtente, 'oldNu' => $nomeUtente]);
+
+            $updatePart = $pdo->prepare('UPDATE Partecipazione SET utente = :newNu WHERE utente = :oldNu');
+            $updatePart->execute(['newNu' => $nuovoNomeUtente, 'oldNu' => $nomeUtente]);
+
+            $deleteOld = $pdo->prepare('DELETE FROM Utente WHERE nomeUtente = :oldNu');
+            $deleteOld->execute(['oldNu' => $nomeUtente]);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        respond(500, 'error', 'Errore durante l\'aggiornamento utente.', null);
+    }
 
     respond(200, 'success', 'Utente aggiornato con successo.', null);
 }
 
 function delete_user(string $nomeUtente): void
 {
+    ensure_user_active_column();
     if ($nomeUtente === '') {
         respond(400, 'error', 'Nome utente non specificato.', null);
     }
 
     $pdo = db();
 
-    $stmtQuiz = $pdo->prepare('SELECT COUNT(*) FROM Quiz WHERE creatore = :nu');
-    $stmtQuiz->execute(['nu' => $nomeUtente]);
-    $quizCount = (int) $stmtQuiz->fetchColumn();
-
-    $stmtPart = $pdo->prepare('SELECT COUNT(*) FROM Partecipazione WHERE utente = :nu');
-    $stmtPart->execute(['nu' => $nomeUtente]);
-    $partCount = (int) $stmtPart->fetchColumn();
-
-    if ($quizCount > 0 || $partCount > 0) {
-        $parts = [];
-        if ($quizCount > 0) $parts[] = "$quizCount quiz creati";
-        if ($partCount > 0) $parts[] = "$partCount partecipazioni";
-        respond(409, 'error', 'Impossibile eliminare: l\'utente ha ' . implode(' e ', $parts) . ' collegati.', [
-            'quizCount' => $quizCount,
-            'partCount' => $partCount,
-        ]);
-    }
-
-    $stmt = $pdo->prepare('DELETE FROM Utente WHERE nomeUtente = :nu');
+    $stmt = $pdo->prepare('UPDATE Utente SET Attivo = 0 WHERE nomeUtente = :nu AND Attivo = 1');
     $stmt->execute(['nu' => $nomeUtente]);
 
     if ($stmt->rowCount() === 0) {
@@ -744,6 +790,7 @@ function fetch_quiz_detail(int $codice): void
 
 function fetch_user_detail(string $nomeUtente): void
 {
+    ensure_user_active_column();
     if ($nomeUtente === '') {
         respond(400, 'error', 'Nome utente non specificato.', null);
     }
@@ -751,7 +798,7 @@ function fetch_user_detail(string $nomeUtente): void
     $pdo = db();
 
     $user = $pdo->prepare('
-        SELECT nomeUtente, nome, cognome, email FROM Utente WHERE nomeUtente = :nu
+        SELECT nomeUtente, nome, cognome, email, Attivo FROM Utente WHERE nomeUtente = :nu
     ');
     $user->execute(['nu' => $nomeUtente]);
     $userData = $user->fetch();
@@ -876,13 +923,14 @@ function fetch_participation_detail(int $codice): void
 
 function start_participation(string $utente, int $quiz): void
 {
+    ensure_user_active_column();
     if ($utente === '') {
         respond(400, 'error', 'Nessun utente selezionato.', null);
     }
 
     $pdo = db();
 
-    $userExists = $pdo->prepare('SELECT COUNT(*) FROM Utente WHERE nomeUtente = :u');
+    $userExists = $pdo->prepare('SELECT COUNT(*) FROM Utente WHERE nomeUtente = :u AND Attivo = 1');
     $userExists->execute(['u' => $utente]);
     if ((int) $userExists->fetchColumn() === 0) {
         respond(404, 'error', 'Utente non trovato.', null);
@@ -945,6 +993,13 @@ function submit_participation_answers(int $partecipazione, array $risposte): voi
             SELECT COUNT(*) FROM Risposta WHERE quiz = :q AND domanda = :d AND numero = :r
         ');
 
+        $maxRisposteStmt = $pdo->prepare('
+            SELECT GREATEST(COUNT(*), 1)
+            FROM Risposta
+            WHERE quiz = :q AND domanda = :d AND tipo = \'Corretta\'
+        ');
+        $rispostePerDomanda = [];
+
         foreach ($risposte as $r) {
             $domanda = (int) ($r['domanda'] ?? 0);
             $risposta = (int) ($r['risposta'] ?? 0);
@@ -959,6 +1014,13 @@ function submit_participation_answers(int $partecipazione, array $risposte): voi
             $verificaRisposta->execute(['q' => $quizCode, 'd' => $domanda, 'r' => $risposta]);
             if ((int) $verificaRisposta->fetchColumn() === 0) {
                 throw new InvalidArgumentException("Risposta $risposta non appartiene alla domanda $domanda.");
+            }
+
+            $rispostePerDomanda[$domanda] = ($rispostePerDomanda[$domanda] ?? 0) + 1;
+            $maxRisposteStmt->execute(['q' => $quizCode, 'd' => $domanda]);
+            $maxRisposte = (int) $maxRisposteStmt->fetchColumn();
+            if ($rispostePerDomanda[$domanda] > $maxRisposte) {
+                throw new InvalidArgumentException("Troppe risposte selezionate per la domanda $domanda.");
             }
 
             $insertStmt->execute([
@@ -1110,6 +1172,7 @@ function handle_request(): void
         case 'update_user':
             update_user(
                 param_string($requestData, 'nomeUtente'),
+                param_string($requestData, 'nuovoNomeUtente', param_string($requestData, 'nomeUtente')),
                 param_string($requestData, 'nome'),
                 param_string($requestData, 'cognome'),
                 param_string($requestData, 'email')
