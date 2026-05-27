@@ -20,7 +20,6 @@ async function renderQuizDetail(codice) {
         headerDiv.innerHTML = `
             <div class="detail-header-top">
                 <h3 class="detail-title">${quiz.titolo}</h3>
-                <button type="button" class="back-button" data-back-target="ricerca-quiz">← Indietro</button>
             </div>
             <div class="detail-meta">
                 <span class="detail-meta-item"><strong>Codice:</strong> ${quiz.codice}</span>
@@ -34,7 +33,7 @@ async function renderQuizDetail(codice) {
                 <span class="detail-meta-item"><strong>Stato:</strong> ${createStateBadge(quiz.stato || 'aperto').outerHTML}</span>
             </div>
         `;
-        headerDiv.querySelector('[data-back-target]')?.addEventListener('click', () => navigateTo('ricerca-quiz'));
+        headerDiv.querySelector('.detail-header-top').appendChild(createBackButton('ricerca-quiz'));
 
         // ── Pulsante Partecipa ────────────────────────
         const partBtn = document.createElement('button');
@@ -139,7 +138,7 @@ async function renderQuizDetail(codice) {
         document.getElementById('start-participation-btn')?.addEventListener('click', () => {
             const selectedUser = userSelect?.value;
             if (!selectedUser) {
-                renderMessage('Seleziona un utente dal pannello a sinistra prima di partecipare.');
+                renderParticipationUserWarning(quiz.codice);
                 return;
             }
             startParticipation(selectedUser, quiz.codice);
@@ -149,6 +148,36 @@ async function renderQuizDetail(codice) {
         renderEmptyFilters();
         renderError(err.message);
     }
+}
+
+function renderParticipationUserWarning(quizCodice) {
+    const container = document.createElement('div');
+    container.className = 'detail-container';
+    container.innerHTML = `
+        <div class="alert alert-warning">
+            Seleziona un utente dal pannello a sinistra prima di partecipare.
+        </div>
+        <div class="detail-header-top">
+            <button type="button" class="button button-primary" id="resume-participation-btn" disabled>Continua al quiz</button>
+        </div>
+    `;
+    container.querySelector('.detail-header-top').appendChild(createBackButton('ricerca-quiz'));
+    centerContent.replaceChildren(container);
+
+    const resumeBtn = container.querySelector('#resume-participation-btn');
+    const tryStart = () => {
+        const selectedUser = userSelect?.value;
+        resumeBtn.disabled = !selectedUser;
+        if (selectedUser) {
+            resumeBtn.textContent = `Continua come ${selectedUser}`;
+        }
+    };
+    resumeBtn.addEventListener('click', () => {
+        const selectedUser = userSelect?.value;
+        if (selectedUser) startParticipation(selectedUser, quizCodice);
+    });
+    userSelect?.addEventListener('change', tryStart);
+    tryStart();
 }
 
 /* ─── Dettaglio utente ────────────────────────────── */
@@ -164,13 +193,15 @@ async function renderUserDetail(nomeUtente) {
         const quizSort = { key: 'dataInizio', dir: 'DESC' };
         const partSort = { key: 'data',        dir: 'DESC' };
         let   viewMode = 'compact';
+        const filterMemory = { values: {} };
 
         // ── Filtri nel pannello sinistro ──────────────
         renderUserDetailFilters(() => {
-            renderUserDetailContent(user, quizSort, partSort, viewMode, (vm) => { viewMode = vm; });
+            filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
+            renderUserDetailContent(user, quizSort, partSort, viewMode, (vm) => { viewMode = vm; }, filterMemory);
         }, viewMode, user);
 
-        renderUserDetailContent(user, quizSort, partSort, viewMode, (vm) => { viewMode = vm; });
+        renderUserDetailContent(user, quizSort, partSort, viewMode, (vm) => { viewMode = vm; }, filterMemory);
 
     } catch (err) {
         renderEmptyFilters();
@@ -178,7 +209,7 @@ async function renderUserDetail(nomeUtente) {
     }
 }
 
-function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode) {
+function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode, filterMemory = { values: {} }) {
     const {
         quizTitle,
         partTitle,
@@ -199,16 +230,16 @@ function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode
     headerDiv.innerHTML = `
         <div class="detail-header-top">
             <h3 class="detail-title">${user.nome} ${user.cognome}</h3>
-            <button type="button" class="back-button" data-back-target="ricerca-utenti">← Indietro</button>
         </div>
         <div class="detail-meta">
             <span class="detail-meta-item"><strong>Username:</strong> ${user.nomeUtente}</span>
             <span class="detail-meta-item"><strong>Email:</strong> ${user.email}</span>
+            ${String(user.Attivo) === '0' ? '<span class="badge badge-chiuso">Utente eliminato</span>' : ''}
             <span class="detail-meta-item"><strong>Quiz creati:</strong> ${user.numeroQuizCreati}</span>
             <span class="detail-meta-item"><strong>Partecipazioni:</strong> ${user.numeroPartecipazioni}</span>
         </div>
     `;
-    headerDiv.querySelector('[data-back-target]')?.addEventListener('click', () => navigateTo('ricerca-utenti'));
+    headerDiv.querySelector('.detail-header-top').appendChild(createBackButton('ricerca-utenti'));
     container.appendChild(headerDiv);
 
     function sortRows(arr, sortState) {
@@ -254,18 +285,22 @@ function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode
     toggleBar.className = 'view-toggle-bar';
     toggleBar.appendChild(createViewToggle(
         () => {
+            filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
             setViewMode('compact');
             renderUserDetailFilters(() => {
-                renderUserDetailContent(user, quizSort, partSort, 'compact', setViewMode);
-            }, 'compact', user);
-            renderUserDetailContent(user, quizSort, partSort, 'compact', setViewMode);
+                filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
+                renderUserDetailContent(user, quizSort, partSort, 'compact', setViewMode, filterMemory);
+            }, 'compact', user, filterMemory.values);
+            renderUserDetailContent(user, quizSort, partSort, 'compact', setViewMode, filterMemory);
         },
         () => {
+            filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
             setViewMode('extended');
             renderUserDetailFilters(() => {
-                renderUserDetailContent(user, quizSort, partSort, 'extended', setViewMode);
-            }, 'extended', user);
-            renderUserDetailContent(user, quizSort, partSort, 'extended', setViewMode);
+                filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
+                renderUserDetailContent(user, quizSort, partSort, 'extended', setViewMode, filterMemory);
+            }, 'extended', user, filterMemory.values);
+            renderUserDetailContent(user, quizSort, partSort, 'extended', setViewMode, filterMemory);
         },
         viewMode
     ));
@@ -295,7 +330,8 @@ function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode
             sortState: quizSort,
             onSort: (key, dir) => {
                 quizSort.key = key; quizSort.dir = dir;
-                renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode);
+                filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
+                renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode, filterMemory);
             },
         }));
     } else {
@@ -327,7 +363,8 @@ function renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode
             sortState: partSort,
             onSort: (key, dir) => {
                 partSort.key = key; partSort.dir = dir;
-                renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode);
+                filterMemory.values = { ...filterMemory.values, ...snapshotFilterValues() };
+                renderUserDetailContent(user, quizSort, partSort, viewMode, setViewMode, filterMemory);
             },
         }));
     } else {
@@ -354,7 +391,6 @@ async function renderParticipationDetail(codice) {
         headerDiv.innerHTML = `
             <div class="detail-header-top">
                 <h3 class="detail-title">Partecipazione #${part.codice}</h3>
-                <button type="button" class="back-button" data-back-target="ricerca-partecipazioni">← Indietro</button>
             </div>
             <div class="detail-meta">
                 <span class="detail-meta-item"><strong>Utente:</strong>
@@ -368,7 +404,7 @@ async function renderParticipationDetail(codice) {
                 <span class="detail-meta-item"><strong>Punteggio totale:</strong> ${part.punteggioTotale}</span>
             </div>
         `;
-        headerDiv.querySelector('[data-back-target]')?.addEventListener('click', () => navigateTo('ricerca-partecipazioni'));
+        headerDiv.querySelector('.detail-header-top').appendChild(createBackButton('ricerca-partecipazioni'));
         container.appendChild(headerDiv);
 
         // ── Sezione domande collassabile ──────────────

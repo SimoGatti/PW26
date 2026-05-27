@@ -41,23 +41,7 @@ function renderManageUsersTable() {
         { label: 'Email',                           key: 'email' },
         { label: 'Quiz',     sortKey: 'numeroQuizCreati',     key: 'numeroQuizCreati', numeric: true },
         { label: 'Part.',    sortKey: 'numeroPartecipazioni', key: 'numeroPartecipazioni', numeric: true },
-        { label: 'Azioni',   render: r => {
-            const div = document.createElement('div');
-            div.className = 'actions-cell';
-            const btnEdit = document.createElement('button');
-            btnEdit.className = 'button button-secondary button-sm btn-edit';
-            btnEdit.textContent = 'Modifica';
-            btnEdit.addEventListener('click', (e) => startInlineEdit(e.target.closest('tr'), r));
-
-            const btnDel = document.createElement('button');
-            btnDel.className = 'button button-danger button-sm btn-delete';
-            btnDel.textContent = 'Elimina';
-            btnDel.addEventListener('click', () => handleDeleteUser(r.nomeUtente));
-
-            div.appendChild(btnEdit);
-            div.appendChild(btnDel);
-            return div;
-        }}
+        { label: 'Azioni',   render: r => createManageActions(r) }
     ];
 
     const wrapper = renderTable({
@@ -76,13 +60,54 @@ function renderManageUsersTable() {
     centerContent.replaceChildren(container);
 }
 
+function createManageActions(user) {
+    const div = document.createElement('div');
+    div.className = 'actions-cell';
+
+    const btnEdit = document.createElement('button');
+    btnEdit.className = 'button button-secondary button-sm btn-edit';
+    btnEdit.textContent = 'Modifica';
+    btnEdit.addEventListener('click', (e) => startInlineEdit(e.target.closest('tr'), user));
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'button button-danger button-sm btn-delete';
+    btnDel.textContent = 'Elimina';
+    btnDel.addEventListener('click', () => handleDeleteUser(user.nomeUtente));
+
+    div.appendChild(btnEdit);
+    div.appendChild(btnDel);
+    return div;
+}
+
+function createTableCell(content, numeric = false) {
+    const cell = document.createElement('td');
+    if (numeric) cell.className = 'col-numeric';
+    cell.textContent = content ?? '';
+    return cell;
+}
+
+function restoreManageRow(tr, user) {
+    tr.classList.remove('editing-row');
+    const actionsCell = document.createElement('td');
+    actionsCell.appendChild(createManageActions(user));
+    tr.replaceChildren(
+        createTableCell(user.nomeUtente),
+        createTableCell(user.nome),
+        createTableCell(user.cognome),
+        createTableCell(user.email),
+        createTableCell(user.numeroQuizCreati ?? 0, true),
+        createTableCell(user.numeroPartecipazioni ?? 0, true),
+        actionsCell
+    );
+}
+
 /**
  * Trasforma la riga in modalità editing inline.
  */
 function startInlineEdit(tr, user) {
     tr.classList.add('editing-row');
     tr.innerHTML = `
-        <td><strong>${user.nomeUtente}</strong></td>
+        <td><input class="inline-edit-input" id="ie-username" value="${escapeHtml(user.nomeUtente)}"></td>
         <td><input class="inline-edit-input" id="ie-nome"    value="${escapeHtml(user.nome)}"></td>
         <td><input class="inline-edit-input" id="ie-cognome" value="${escapeHtml(user.cognome)}"></td>
         <td><input class="inline-edit-input" id="ie-email"   value="${escapeHtml(user.email)}" type="email"></td>
@@ -95,22 +120,24 @@ function startInlineEdit(tr, user) {
     `;
 
     tr.querySelector('.btn-cancel').addEventListener('click', () => {
-        renderManageUsersTable(); // Ripristina la riga ri-renderizzando la tabella locale
+        restoreManageRow(tr, user);
     });
 
     tr.querySelector('.btn-save').addEventListener('click', async () => {
+        const nuovoNomeUtente = tr.querySelector('#ie-username').value.trim();
         const nome    = tr.querySelector('#ie-nome').value.trim();
         const cognome = tr.querySelector('#ie-cognome').value.trim();
         const email   = tr.querySelector('#ie-email').value.trim();
 
-        if (!nome || !cognome || !email) {
-            showCrudFeedback('error', 'Nome, cognome e email sono obbligatori.');
+        if (!nuovoNomeUtente || !nome || !cognome || !email) {
+            showCrudFeedback('error', 'Username, nome, cognome e email sono obbligatori.');
             return;
         }
 
         try {
-            await apiPost('update_user', { nomeUtente: user.nomeUtente, nome, cognome, email });
-            showCrudFeedback('success', `Utente ${user.nomeUtente} aggiornato.`);
+            await apiPost('update_user', { nomeUtente: user.nomeUtente, nuovoNomeUtente, nome, cognome, email });
+            showCrudFeedback('success', `Utente ${nuovoNomeUtente} aggiornato.`);
+            await loadUserSelect();
             await refreshManageUsers();
         } catch (err) {
             showCrudFeedback('error', err.message);
@@ -156,6 +183,7 @@ async function handleCreateUser() {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
+        await loadUserSelect();
         await refreshManageUsers();
     } catch (err) {
         showCrudFeedback('error', err.message);
@@ -168,6 +196,7 @@ async function handleDeleteUser(username) {
 
     try {
         await apiPost('delete_user', { nomeUtente: username });
+        await loadUserSelect();
         await refreshManageUsers();
     } catch (err) {
         showCrudFeedback('error', err.message);

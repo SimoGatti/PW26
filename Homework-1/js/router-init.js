@@ -1,12 +1,36 @@
 /* ─── Router ──────────────────────────────────────── */
 
+function currentRouteFromUrl() {
+    const url = new URL(window.location.href);
+    const params = {};
+    url.searchParams.forEach((value, key) => {
+        if (key !== 'view') params[key] = value;
+    });
+    return {
+        view: url.searchParams.get('view') || 'home',
+        params,
+    };
+}
+
 function navigateTo(view, params = {}) {
+    const from = currentRouteFromUrl();
     const url = new URL(window.location.href);
     url.search = '';
     url.searchParams.set('view', view);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
-    window.history.pushState({ view, ...params }, '', url.toString());
+    window.history.pushState({ view, params, from }, '', url.toString());
     activateRoute(view, params);
+}
+
+function navigateBack(fallbackView = 'home', fallbackParams = {}) {
+    const state = window.history.state || {};
+    if (state.from?.view) {
+        navigateTo(state.from.view, state.from.params || {});
+    } else if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        navigateTo(fallbackView, fallbackParams);
+    }
 }
 
 async function activateRoute(view, params = {}) {
@@ -80,8 +104,9 @@ navItems.forEach(item => {
 window.addEventListener('popstate', event => {
     const state = event.state || {};
     const view = state.view || 'home';
-    const params = { ...state };
-    delete params.view;
+    const params = state.params || Object.fromEntries(
+        Object.entries(state).filter(([key]) => key !== 'view' && key !== 'from')
+    );
     activateRoute(view, params);
 });
 
@@ -117,6 +142,7 @@ const urlParams = new URL(window.location.href).searchParams;
 const initialView = urlParams.get('view') || 'home';
 const initialParams = {};
 urlParams.forEach((v, k) => { if (k !== 'view') initialParams[k] = v; });
+window.history.replaceState({ view: initialView, params: initialParams }, '', window.location.href);
 activateRoute(initialView, initialParams);
 applyNavMode();
 loadUserSelect();

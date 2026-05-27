@@ -14,6 +14,10 @@
         return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     }
 
+    function toDisplayDate(date) {
+        return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+    }
+
     function parseIsoDate(value) {
         const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
         if (!match) return null;
@@ -27,6 +31,12 @@
             return null;
         }
         return parsed;
+    }
+
+    function parseDisplayDate(value) {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || '');
+        if (!match) return null;
+        return parseIsoDate(`${match[3]}-${match[2]}-${match[1]}`);
     }
 
     function sameDay(a, b) {
@@ -63,7 +73,7 @@
         }
 
         function selectedDate() {
-            return parseIsoDate(input.value);
+            return parseDisplayDate(input.value);
         }
 
         function setVisibleFromOpening() {
@@ -295,11 +305,12 @@
                 input.dispatchEvent(new Event('change', { bubbles: true }));
                 close();
             } else if (target.matches('[data-today]')) {
-                input.value = toIsoDate(today());
+                input.value = toDisplayDate(today());
                 input.dispatchEvent(new Event('change', { bubbles: true }));
                 close();
             } else if (target.matches('[data-date]')) {
-                input.value = target.dataset.date;
+                const parsed = parseIsoDate(target.dataset.date);
+                input.value = parsed ? toDisplayDate(parsed) : '';
                 input.dispatchEvent(new Event('change', { bubbles: true }));
                 close();
             }

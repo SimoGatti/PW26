@@ -2,9 +2,9 @@
 
 /* Stato sort e paginazione per ogni sezione */
 const searchState = {
-    users:          { sort: 'cognome',        dir: 'ASC',  page: 1, limit: 25, mode: 'compact' },
-    quizzes:        { sort: 'titolo',         dir: 'ASC',  page: 1, limit: 25, mode: 'compact' },
-    participations: { sort: 'punteggioTotale',dir: 'DESC', page: 1, limit: 25, mode: 'compact' },
+    users:          { sort: 'cognome',        dir: 'ASC',  page: 1, limit: 25, mode: 'compact', filterValues: {} },
+    quizzes:        { sort: 'titolo',         dir: 'ASC',  page: 1, limit: 25, mode: 'compact', filterValues: {} },
+    participations: { sort: 'punteggioTotale',dir: 'DESC', page: 1, limit: 25, mode: 'compact', filterValues: {} },
 };
 
 /* Aggiorna il container dei risultati senza flashare l'intera pagina */
@@ -16,6 +16,14 @@ function updateResultsContainer(newContent) {
     } else {
         centerContent.replaceChildren(newContent);
     }
+}
+
+function rememberFilters(sectionState) {
+    sectionState.filterValues = {
+        ...sectionState.filterValues,
+        ...snapshotFilterValues(),
+    };
+    return sectionState.filterValues;
 }
 
 /* ─── Ricerca Utenti ──────────────────────────────── */
@@ -62,8 +70,8 @@ async function loadUsers(page = 1) {
             rows: items,
             emptyMsg: 'Nessun utente trovato.',
             viewToggle: createViewToggle(
-                () => { s.mode = 'compact';  renderUserFilters(loadUsers, s.mode); loadUsers(1); },
-                () => { s.mode = 'extended'; renderUserFilters(loadUsers, s.mode); loadUsers(1); },
+                () => { const values = rememberFilters(s); s.mode = 'compact';  renderUserFilters(loadUsers, s.mode, values); loadUsers(1); },
+                () => { const values = rememberFilters(s); s.mode = 'extended'; renderUserFilters(loadUsers, s.mode, values); loadUsers(1); },
                 s.mode
             ),
             sortState: { key: s.sort, dir: s.dir },
@@ -102,7 +110,8 @@ async function loadQuizzes(page = 1) {
         const { items, total } = result.data;
 
         const allColumns = [
-            { label: 'Codice',        sortKey: 'codice',              render: r => createLink(r.codice,   `?view=quiz-detail&id=${r.codice}`),                         numeric: true },
+            { label: '', colClass: 'detail-action-col', render: r => createDetailButton('quiz-detail', { id: r.codice }, 'Apri dettaglio quiz', 'play') },
+            { label: 'Codice',        sortKey: 'codice',              key: 'codice',                                                                numeric: true },
             { label: 'Titolo',        sortKey: 'titolo',              render: r => createLink(r.titolo,   `?view=quiz-detail&id=${r.codice}`) },
             { label: 'Creatore',                                       render: r => createLink(r.creatore, `?view=user-detail&id=${encodeURIComponent(r.creatore)}`) },
             { label: 'Inizio',        sortKey: 'dataInizio',          render: r => document.createTextNode(formatDate(r.dataInizio)),                                  numeric: true },
@@ -112,6 +121,7 @@ async function loadQuizzes(page = 1) {
             { label: 'Partecipazioni',sortKey: 'numeroPartecipazioni',key: 'numeroPartecipazioni',numeric: true },
         ];
         const compactColumns = [
+            { label: '', colClass: 'detail-action-col', render: r => createDetailButton('quiz-detail', { id: r.codice }, 'Apri dettaglio quiz', 'play') },
             { label: 'Titolo',  sortKey: 'titolo',        render: r => createLink(r.titolo,   `?view=quiz-detail&id=${r.codice}`) },
             { label: 'Creatore',                           render: r => createLink(r.creatore, `?view=user-detail&id=${encodeURIComponent(r.creatore)}`) },
             { label: 'Stato',                              render: r => createStateBadge(r.stato) },
@@ -124,8 +134,8 @@ async function loadQuizzes(page = 1) {
         container.appendChild(renderTable({
             columns, rows: items, emptyMsg: 'Nessun quiz trovato.',
             viewToggle: createViewToggle(
-                () => { s.mode = 'compact';  renderQuizFilters(loadQuizzes, s.mode); loadQuizzes(1); },
-                () => { s.mode = 'extended'; renderQuizFilters(loadQuizzes, s.mode); loadQuizzes(1); },
+                () => { const values = rememberFilters(s); s.mode = 'compact';  renderQuizFilters(loadQuizzes, s.mode, values); loadQuizzes(1); },
+                () => { const values = rememberFilters(s); s.mode = 'extended'; renderQuizFilters(loadQuizzes, s.mode, values); loadQuizzes(1); },
                 s.mode
             ),
             sortState: { key: s.sort, dir: s.dir },
@@ -162,15 +172,9 @@ async function loadParticipations(page = 1) {
         });
         const { items, total } = result.data;
 
-        // Aggiungiamo _clickRoute a ogni riga per il click-su-riga
-        const rowsWithClick = items.map(r => ({
-            ...r,
-            _clickRoute:  'participation-detail',
-            _clickParams: { id: r.codice },
-        }));
-
         const allColumns = [
-            { label: 'Codice',    sortKey: 'codice', render: r => createLink(r.codice,    `?view=participation-detail&id=${r.codice}`),                     numeric: true },
+            { label: '', colClass: 'detail-action-col', render: r => createDetailButton('participation-detail', { id: r.codice }, 'Apri dettaglio partecipazione') },
+            { label: 'Codice',    sortKey: 'codice', key: 'codice',                                                                                       numeric: true },
             { label: 'Utente',                        render: r => createLink(r.utente,    `?view=user-detail&id=${encodeURIComponent(r.utente)}`) },
             { label: 'Quiz',                          render: r => createLink(r.titoloQuiz,`?view=quiz-detail&id=${r.quiz}`) },
             { label: 'Data',      sortKey: 'data',    render: r => document.createTextNode(formatDate(r.data)),                                              numeric: true },
@@ -178,6 +182,7 @@ async function loadParticipations(page = 1) {
             { label: 'Punteggio', sortKey: 'punteggioTotale',    key: 'punteggioTotale',    numeric: true },
         ];
         const compactColumns = [
+            { label: '', colClass: 'detail-action-col', render: r => createDetailButton('participation-detail', { id: r.codice }, 'Apri dettaglio partecipazione') },
             { label: 'Utente',    render: r => createLink(r.utente,    `?view=user-detail&id=${encodeURIComponent(r.utente)}`) },
             { label: 'Quiz',      render: r => createLink(r.titoloQuiz,`?view=quiz-detail&id=${r.quiz}`) },
             { label: 'Risposte',  sortKey: 'numeroRisposteDate', key: 'numeroRisposteDate', numeric: true },
@@ -188,10 +193,10 @@ async function loadParticipations(page = 1) {
         const container = document.createElement('div');
         container.className = 'results-container';
         container.appendChild(renderTable({
-            columns, rows: rowsWithClick, emptyMsg: 'Nessuna partecipazione trovata.',
+            columns, rows: items, emptyMsg: 'Nessuna partecipazione trovata.',
             viewToggle: createViewToggle(
-                () => { s.mode = 'compact';  renderParticipationFilters(loadParticipations, s.mode); loadParticipations(1); },
-                () => { s.mode = 'extended'; renderParticipationFilters(loadParticipations, s.mode); loadParticipations(1); },
+                () => { const values = rememberFilters(s); s.mode = 'compact';  renderParticipationFilters(loadParticipations, s.mode, values); loadParticipations(1); },
+                () => { const values = rememberFilters(s); s.mode = 'extended'; renderParticipationFilters(loadParticipations, s.mode, values); loadParticipations(1); },
                 s.mode
             ),
             sortState: { key: s.sort, dir: s.dir },

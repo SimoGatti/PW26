@@ -162,25 +162,29 @@ function buildNavBar({ total, page, limit, onPage }, position = 'bottom', showPa
     const btnGroup = document.createElement('div');
     btnGroup.className = 'pagination-buttons';
 
-    if (page > 1) {
-        const prev = document.createElement('button');
-        prev.className = 'button button-secondary button-sm';
-        prev.textContent = '◀ Precedente';
-        prev.addEventListener('click', () => onPage(page - 1));
-        btnGroup.appendChild(prev);
-    }
+    const prev = document.createElement('button');
+    prev.className = 'button button-secondary button-sm pagination-nav-btn';
+    prev.textContent = '‹';
+    prev.title = 'Pagina precedente';
+    prev.disabled = page <= 1;
+    prev.addEventListener('click', () => {
+        if (page > 1) onPage(page - 1);
+    });
+    btnGroup.appendChild(prev);
 
     if (showPages) {
         buildPageNavigator(page, totalPages, onPage).forEach(item => btnGroup.appendChild(item));
     }
 
-    if (page < totalPages) {
-        const next = document.createElement('button');
-        next.className = 'button button-secondary button-sm';
-        next.textContent = 'Successiva ▶';
-        next.addEventListener('click', () => onPage(page + 1));
-        btnGroup.appendChild(next);
-    }
+    const next = document.createElement('button');
+    next.className = 'button button-secondary button-sm pagination-nav-btn';
+    next.textContent = '›';
+    next.title = 'Pagina successiva';
+    next.disabled = page >= totalPages;
+    next.addEventListener('click', () => {
+        if (page < totalPages) onPage(page + 1);
+    });
+    btnGroup.appendChild(next);
     nav.appendChild(btnGroup);
     return nav;
 }
@@ -192,7 +196,7 @@ function buildPageNavigator(page, totalPages, onPage) {
     };
 
     add(1);
-    for (let p = page - 2; p <= page + 2; p++) {
+    for (let p = page - 1; p <= page + 1; p++) {
         if (p > 1 && p < totalPages) add(p);
     }
     if (totalPages > 1) add(totalPages);
@@ -249,6 +253,25 @@ function createLink(text, href, className = '') {
     return a;
 }
 
+function createDetailButton(view, params = {}, title = 'Apri dettaglio', icon = 'search') {
+    const icons = {
+        search: 'M10.5 5a5.5 5.5 0 0 1 4.38 8.83l3.15 3.14a.75.75 0 0 1-1.06 1.06l-3.14-3.15A5.5 5.5 0 1 1 10.5 5Zm0 1.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z',
+        play: 'M8 5.8c0-.66.72-1.08 1.3-.75l9.1 5.2a.86.86 0 0 1 0 1.5l-9.1 5.2A.86.86 0 0 1 8 16.2V5.8Z',
+    };
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'icon-button detail-open-button';
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
+    btn.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="${icons[icon] || icons.search}"></path>
+        </svg>
+    `;
+    btn.addEventListener('click', () => navigateTo(view, params));
+    return btn;
+}
+
 function createStateBadge(stato) {
     const span = document.createElement('span');
     span.className = `badge badge-${stato}`;
@@ -269,7 +292,7 @@ function createBackButton(fallbackView, fallbackParams = {}) {
     btn.innerHTML = '← Indietro';
     btn.title = 'Torna alla pagina precedente';
     btn.addEventListener('click', () => {
-        navigateTo(fallbackView, fallbackParams);
+        navigateBack(fallbackView, fallbackParams);
     });
     return btn;
 }

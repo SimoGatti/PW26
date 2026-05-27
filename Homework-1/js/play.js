@@ -39,12 +39,14 @@ async function renderParticipationPlay(quizCodice, partecipazioneCodice) {
         quiz.domande.forEach(d => {
             const qCard = document.createElement('div');
             qCard.className = 'question-card';
+            const maxSelections = Math.max(1, d.risposte.filter(isCorrectAnswer).length);
             qCard.innerHTML = `
                 <div class="question-header">
                     <span class="question-number">${d.numero}</span>
                     <span class="question-text">${d.testo}</span>
                 </div>
-                <div class="answer-list answer-list-play">
+                <p class="question-hint">Puoi selezionare al massimo ${maxSelections} rispost${maxSelections === 1 ? 'a' : 'e'}.</p>
+                <div class="answer-list answer-list-play" data-max-selections="${maxSelections}">
                     ${d.risposte.map(r => `
                         <label class="answer-option">
                             <input type="checkbox" name="q${d.numero}" value="${r.numero}" data-domanda="${d.numero}">
@@ -53,6 +55,12 @@ async function renderParticipationPlay(quizCodice, partecipazioneCodice) {
                     `).join('')}
                 </div>
             `;
+            qCard.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    const checked = qCard.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checked.length > maxSelections) input.checked = false;
+                });
+            });
             form.appendChild(qCard);
         });
 

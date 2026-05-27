@@ -16,8 +16,25 @@ function clearDateDefaults(root = filterContainer) {
     });
 }
 
+function snapshotFilterValues(root = filterContainer) {
+    const values = {};
+    root.querySelectorAll('input, select').forEach(element => {
+        if (!element.id) return;
+        values[element.id] = element.value;
+    });
+    return values;
+}
+
+function restoreFilterValues(values = {}, root = filterContainer) {
+    Object.entries(values).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element && !root.contains(element)) return;
+        if (element) element.value = value;
+    });
+}
+
 function dateFilterInput(id) {
-    return `<input type="text" id="${id}" class="form-input" value="" placeholder="aaaa-mm-gg" pattern="\\d{4}-\\d{2}-\\d{2}" inputmode="numeric" autocomplete="off" data-date-filter data-date-picker>`;
+    return `<input type="text" id="${id}" class="form-input" value="" placeholder="gg/mm/aaaa" pattern="\\d{2}/\\d{2}/\\d{4}" inputmode="numeric" autocomplete="off" data-date-filter data-date-picker>`;
 }
 
 /* Debounce: ritarda l'esecuzione fino a che l'utente smette di scrivere */
@@ -50,6 +67,25 @@ function rangeField(id, label, min, max) {
     `;
 }
 
+function dateDisplayToIso(value) {
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || '');
+    if (!match) return '';
+    return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
+function getDateFilterValue(id) {
+    return dateDisplayToIso(getFilterValue(id));
+}
+
+function buildRangeAnchors(min, max) {
+    if (max <= min) return [min];
+    const span = max - min;
+    if (span <= 4) {
+        return Array.from({ length: span + 1 }, (_, index) => min + index);
+    }
+    return [...new Set([0, 0.25, 0.5, 0.75, 1].map(pct => Math.round(min + span * pct)))];
+}
+
 function setupDualRange(id, onChange) {
     const minEl = document.getElementById(`${id}-min`);
     const maxEl = document.getElementById(`${id}-max`);
@@ -61,10 +97,7 @@ function setupDualRange(id, onChange) {
     const min = parseInt(minEl.min || '0');
     const max = parseInt(maxEl.max || '0');
     if (anchors) {
-        anchors.innerHTML = [0, 0.25, 0.5, 0.75, 1].map(pct => {
-            const val = Math.round(min + (max - min) * pct);
-            return `<span>${val}</span>`;
-        }).join('');
+        anchors.innerHTML = buildRangeAnchors(min, max).map(value => `<span>${value}</span>`).join('');
     }
 
     const update = () => {
@@ -80,6 +113,21 @@ function setupDualRange(id, onChange) {
     minEl.addEventListener('input', () => { update(); onChange(); });
     maxEl.addEventListener('input', () => { update(); onChange(); });
     update();
+}
+
+function refreshRangeField(id) {
+    const minEl = document.getElementById(`${id}-min`);
+    const maxEl = document.getElementById(`${id}-max`);
+    const minVal = document.getElementById(`${id}-min-val`);
+    const maxVal = document.getElementById(`${id}-max-val`);
+    if (!minEl || !maxEl) return;
+    if (parseInt(minEl.value) > parseInt(maxEl.value)) {
+        const tmp = minEl.value;
+        minEl.value = maxEl.value;
+        maxEl.value = tmp;
+    }
+    if (minVal) minVal.textContent = minEl.value;
+    if (maxVal) maxVal.textContent = maxEl.value;
 }
 
 function getRangeFilter(id) {
@@ -129,16 +177,13 @@ function updateRangeBounds(id, min, max) {
 
     const anchors = document.getElementById(`${id}-anchors`);
     if (anchors) {
-        anchors.innerHTML = [0, 0.25, 0.5, 0.75, 1].map(pct => {
-            const value = Math.round(normalizedMin + (normalizedMax - normalizedMin) * pct);
-            return `<span>${value}</span>`;
-        }).join('');
+        anchors.innerHTML = buildRangeAnchors(normalizedMin, normalizedMax).map(value => `<span>${value}</span>`).join('');
     }
 }
 
 /* ─── Filtri Ricerca Utenti ───────────────────────── */
 
-async function renderUserFilters(onSearch, mode = 'extended') {
+async function renderUserFilters(onSearch, mode = 'extended', preservedValues = {}) {
     const isCompact = mode === 'compact';
     filterContainer.innerHTML = `
         <h2>Filtri Ricerca</h2>
@@ -199,10 +244,7 @@ async function renderUserFilters(onSearch, mode = 'extended') {
             // Generiamo le ancore (0, 25%, 50%, 75%, 100%)
             const qAnchors = document.getElementById('quiz-anchors');
             if (qAnchors) {
-                qAnchors.innerHTML = [0, 0.25, 0.5, 0.75, 1].map(pct => {
-                    const val = Math.round(realQuizMax * pct);
-                    return `<span>${val}</span>`;
-                }).join('');
+                qAnchors.innerHTML = buildRangeAnchors(0, realQuizMax).map(value => `<span>${value}</span>`).join('');
             }
         }
 
@@ -216,16 +258,15 @@ async function renderUserFilters(onSearch, mode = 'extended') {
             document.getElementById('part-max-val').textContent = realPartMax;
             const pAnchors = document.getElementById('part-anchors');
             if (pAnchors) {
-                pAnchors.innerHTML = [0, 0.25, 0.5, 0.75, 1].map(pct => {
-                    const val = Math.round(realPartMax * pct);
-                    return `<span>${val}</span>`;
-                }).join('');
+                pAnchors.innerHTML = buildRangeAnchors(0, realPartMax).map(value => `<span>${value}</span>`).join('');
             }
         }
     } catch (e) {
         // Fallback silenzioso: gli slider restano con valori default
         console.warn('[QUIZZING] user_stats non disponibile:', e.message);
     }
+
+    restoreFilterValues(preservedValues);
 
     const debouncedSearch = debounce(() => onSearch(1), 400);
 
@@ -273,6 +314,8 @@ async function renderUserFilters(onSearch, mode = 'extended') {
     }
     partMin?.addEventListener('input', () => { updatePartLabels(); debouncedSearch(); });
     partMax?.addEventListener('input', () => { updatePartLabels(); debouncedSearch(); });
+    updateQuizLabels();
+    updatePartLabels();
 
     // Pulisci Filtri
     document.getElementById('filter-reset-btn').addEventListener('click', () => {
@@ -303,7 +346,7 @@ function getUserFilterParams() {
 
 /* ─── Filtri Dettaglio Utente (pannello sx) ───────── */
 
-function renderUserDetailFilters(onFilterChange, mode = 'compact', user = null) {
+function renderUserDetailFilters(onFilterChange, mode = 'compact', user = null, preservedValues = {}) {
     const isCompact = mode === 'compact';
     const quizStats = minMaxFrom(user?.quizCreati || [], 'numeroDomande');
     const responseStats = minMaxFrom(user?.partecipazioni || [], 'numeroRisposteDate');
@@ -353,6 +396,7 @@ function renderUserDetailFilters(onFilterChange, mode = 'compact', user = null) 
     `;
     clearDateDefaults();
     window.initDatePickers?.(filterContainer);
+    restoreFilterValues(preservedValues);
 
     const debouncedChange = debounce(() => onFilterChange(), 400);
     [
@@ -369,6 +413,7 @@ function renderUserDetailFilters(onFilterChange, mode = 'compact', user = null) 
     setupDualRange('ud-filter-quiz-questions', debouncedChange);
     setupDualRange('ud-filter-part-responses', debouncedChange);
     setupDualRange('ud-filter-part-score', debouncedChange);
+    ['ud-filter-quiz-questions', 'ud-filter-part-responses', 'ud-filter-part-score'].forEach(refreshRangeField);
 
     document.getElementById('ud-reset-btn')?.addEventListener('click', () => {
         [
@@ -402,10 +447,10 @@ function getUserDetailFilterParams() {
     return {
         quizTitle: getFilterValue('ud-filter-quiz-title').toLowerCase(),
         partTitle: getFilterValue('ud-filter-part-title').toLowerCase(),
-        quizDateFrom: getFilterValue('ud-filter-quiz-date-from'),
-        quizDateTo: getFilterValue('ud-filter-quiz-date-to'),
-        partDateFrom: getFilterValue('ud-filter-part-date-from'),
-        partDateTo: getFilterValue('ud-filter-part-date-to'),
+        quizDateFrom: getDateFilterValue('ud-filter-quiz-date-from'),
+        quizDateTo: getDateFilterValue('ud-filter-quiz-date-to'),
+        partDateFrom: getDateFilterValue('ud-filter-part-date-from'),
+        partDateTo: getDateFilterValue('ud-filter-part-date-to'),
         quizQuestions,
         partResponses,
         partScore,
@@ -414,7 +459,7 @@ function getUserDetailFilterParams() {
 
 /* ─── Filtri Ricerca Quiz ─────────────────────────── */
 
-async function renderQuizFilters(onSearch, mode = 'extended') {
+async function renderQuizFilters(onSearch, mode = 'extended', preservedValues = {}) {
     const isCompact = mode === 'compact';
     filterContainer.innerHTML = `
         <h2>Filtri Ricerca</h2>
@@ -476,6 +521,9 @@ async function renderQuizFilters(onSearch, mode = 'extended') {
         console.warn('[QUIZZING] quiz_stats non disponibile:', e.message);
     }
 
+    restoreFilterValues(preservedValues);
+    ['filter-questions', 'filter-participations'].forEach(refreshRangeField);
+
     document.getElementById('filter-reset-btn').addEventListener('click', () => {
         ['filter-title', 'filter-creator', 'filter-stato', 'filter-code', 'filter-dateFrom', 'filter-dateTo'].forEach(id => {
             const el = document.getElementById(id);
@@ -492,8 +540,8 @@ function getQuizFilterParams() {
         creatore: getFilterValue('filter-creator'),
         stato:    getFilterValue('filter-stato'),
         codice:   getFilterValue('filter-code'),
-        dateFrom: getFilterValue('filter-dateFrom'),
-        dateTo:   getFilterValue('filter-dateTo'),
+        dateFrom: getDateFilterValue('filter-dateFrom'),
+        dateTo:   getDateFilterValue('filter-dateTo'),
         ...getBoundedRangeParams('filter-questions', 'questionMin', 'questionMax'),
         ...getBoundedRangeParams('filter-participations', 'participationMin', 'participationMax'),
     };
@@ -577,7 +625,7 @@ function renderParticipationDetailFilters(onFilterChange) {
 
 /* ─── Filtri Ricerca Partecipazioni ───────────────── */
 
-async function renderParticipationFilters(onSearch, mode = 'extended') {
+async function renderParticipationFilters(onSearch, mode = 'extended', preservedValues = {}) {
     const isCompact = mode === 'compact';
     filterContainer.innerHTML = `
         <h2>Filtri Ricerca</h2>
@@ -629,6 +677,9 @@ async function renderParticipationFilters(onSearch, mode = 'extended') {
         console.warn('[QUIZZING] participation_stats non disponibile:', e.message);
     }
 
+    restoreFilterValues(preservedValues);
+    ['filter-responses', 'filter-score'].forEach(refreshRangeField);
+
     document.getElementById('filter-reset-btn').addEventListener('click', () => {
         ['filter-user', 'filter-title', 'filter-code', 'filter-dateFrom', 'filter-dateTo'].forEach(id => {
             const el = document.getElementById(id);
@@ -644,8 +695,8 @@ function getParticipationFilterParams() {
         fUtente:     getFilterValue('filter-user'),
         fTitoloQuiz: getFilterValue('filter-title'),
         codice:      getFilterValue('filter-code'),
-        dateFrom:    getFilterValue('filter-dateFrom'),
-        dateTo:      getFilterValue('filter-dateTo'),
+        dateFrom:    getDateFilterValue('filter-dateFrom'),
+        dateTo:      getDateFilterValue('filter-dateTo'),
         ...getBoundedRangeParams('filter-responses', 'responseMin', 'responseMax'),
         ...getBoundedRangeParams('filter-score', 'scoreMin', 'scoreMax'),
     };
