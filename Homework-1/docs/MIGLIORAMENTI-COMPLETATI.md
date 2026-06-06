@@ -242,6 +242,8 @@ Input `manage-filter-q` con debounce in sidebar che chiama `refreshManageUsers()
 - **Schema SQL riallineato:** `data/quiz_mysql.sql` e `data/generate_mysql.py` includono la colonna `Attivo TINYINT(1) NOT NULL DEFAULT 1` nella tabella `Utente`, coerente con la migrazione automatica gia' presente in `api.php`.
 - **Toggle compatta/estesa senza reset filtri:** `filters.js` espone snapshot/restore dei valori di input e select; `search.js` e `details.js` passano i valori correnti quando cambiano modalita'. Ordinamento e direzione restano nello stato gia' esistente delle schermate.
 - **Layout responsive con centro prioritario:** `responsive.css` riduce prima le colonne laterali sotto 1100px e sotto 900px porta la colonna centrale in cima, con altezza minima dedicata, cosi' quando la finestra viene stretta la componente principale resta la piu' visibile.
+- **Utente attivo persistente:** `dom.js` introduce la chiave `localStorage` `quizzing.activeUser`; `router-init.js` salva il valore a ogni cambio select e lo ripristina dopo `list_usernames`, eliminandolo se l'utente non e' piu' presente/attivo.
+- **Dataset SQL con date realistiche:** `data/generate_mysql.py` usa il 6 giugno 2026 come data di riferimento, genera 36 quiz aperti in quel periodo e limita le partecipazioni a quiz gia' iniziati con data non futura. `data/quiz_mysql.sql` e' stato rigenerato: 36 quiz risultano aperti al 2026-06-06 e nessuna partecipazione supera quella data.
 
 ### Ricerca Quiz
 - **Icona play per dettaglio quiz:** `createDetailButton` in `ui.js` ora accetta un tipo icona; le azioni di dettaglio quiz in `search.js` usano il triangolo play al posto della lente.

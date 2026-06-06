@@ -6,9 +6,6 @@ Completare i miglioramenti e tracciare per ogni miglioramento completato tutta l
 
 ## generico
 
-- Utente attivo viene azzerato alla ricarica
-- Partecipazioni future rispetto alla data odierna esistono già
-
 ## home
 
 
