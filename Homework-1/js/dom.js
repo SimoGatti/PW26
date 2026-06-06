@@ -8,6 +8,7 @@ const messageTemplate = document.getElementById('view-message-template');
 const loadingTemplate = document.getElementById('view-loading-template');
 const userSelect = document.getElementById('user-selection');
 const API_URL = 'https://namenotfound.altervista.org/api.php';
+const ACTIVE_USER_STORAGE_KEY = 'quizzing.activeUser';
 
 function findNavItemByRoute(route) {
     return navItems.find(item => item.dataset.route === route) || null;
@@ -61,4 +62,24 @@ function syncUserSelectLabel() {
     const selected = userSelect.options[userSelect.selectedIndex];
     valueEl.textContent = selected ? selected.textContent : '— Non Selezionato —';
     wrapper.classList.toggle('is-placeholder', !userSelect.value);
+}
+
+function getStoredActiveUser() {
+    try {
+        return localStorage.getItem(ACTIVE_USER_STORAGE_KEY) || '';
+    } catch {
+        return '';
+    }
+}
+
+function storeActiveUser(value) {
+    try {
+        if (value) {
+            localStorage.setItem(ACTIVE_USER_STORAGE_KEY, value);
+        } else {
+            localStorage.removeItem(ACTIVE_USER_STORAGE_KEY);
+        }
+    } catch {
+        // Se localStorage non e' disponibile, il select resta comunque usabile.
+    }
 }

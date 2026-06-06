@@ -122,6 +122,7 @@ new ResizeObserver(() => applyNavMode()).observe(navPanel);
 async function loadUserSelect() {
     try {
         const result = await apiCall('list_usernames', { limit: 100 });
+        const storedUser = getStoredActiveUser();
         userSelect.innerHTML = '<option value="">Seleziona utente...</option>';
         (result.data.items || []).forEach(u => {
             const opt = document.createElement('option');
@@ -129,6 +130,12 @@ async function loadUserSelect() {
             opt.textContent = u.nomeUtente;
             userSelect.appendChild(opt);
         });
+        const storedUserExists = Array.from(userSelect.options).some(option => option.value === storedUser);
+        if (storedUser && storedUserExists) {
+            userSelect.value = storedUser;
+        } else if (storedUser) {
+            storeActiveUser('');
+        }
         syncUserSelectLabel();
     } catch {
         userSelect.innerHTML = '<option value="">Utenti non disponibili</option>';
@@ -136,7 +143,10 @@ async function loadUserSelect() {
     }
 }
 
-userSelect?.addEventListener('change', syncUserSelectLabel);
+userSelect?.addEventListener('change', () => {
+    storeActiveUser(userSelect.value);
+    syncUserSelectLabel();
+});
 
 const urlParams = new URL(window.location.href).searchParams;
 const initialView = urlParams.get('view') || 'home';
