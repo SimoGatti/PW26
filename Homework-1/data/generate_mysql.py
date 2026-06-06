@@ -81,7 +81,7 @@ with open(JSON_PATH, "r", encoding="utf-8") as f:
 
 cat_domande: dict[str, list] = defaultdict(list)
 for item in raw:
-    cat = CAT_MAP.get(item["categoria"], item["categoria"])
+    cat = CAT_MAP.get(item["categoria"]) or item["categoria"]
     item["_cat"] = cat
     cat_domande[cat].append(item)
 
@@ -314,7 +314,7 @@ try:
     # pyrefly: ignore [missing-import]
     from odf.opendocument import OpenDocumentSpreadsheet
     # pyrefly: ignore [missing-import]
-    from odf.style import Style, TextProperties, 
+    from odf.style import Style, TextProperties
     # pyrefly: ignore [missing-import]
     from odf.table import Table, TableRow, TableCell, TableColumn
     # pyrefly: ignore [missing-import]
