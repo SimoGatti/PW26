@@ -225,6 +225,7 @@ Input `manage-filter-q` con debounce in sidebar che chiama `refreshManageUsers()
 ### Dettaglio Quiz
 - **Avviso partecipazione senza utente selezionato:** se l'utente prova a partecipare senza selezionare un utente, `details.js` mostra una schermata di avviso con pulsante Indietro dinamico e pulsante Continua. La selezione dell'utente dal pannello sinistro viene intercettata e abilita l'accesso al quiz dalla stessa schermata.
 - **Limite risposte selezionabili:** in `play.js` ogni domanda calcola il numero di risposte corrette e impedisce di selezionare più checkbox di quel limite. In `api.php` la stessa regola viene validata lato server durante il salvataggio delle risposte.
+- **Risposte in ordine casuale per partecipazione:** in `play.js` le risposte mostrate durante lo svolgimento quiz vengono mescolate con shuffle Fisher-Yates basato su codice partecipazione e numero domanda. Ogni nuova partecipazione vede quindi un ordine diverso, mentre la stessa partecipazione resta stabile se la pagina viene ricaricata.
 
 ### Ricerca Quiz
 - **Pulsante dettaglio esplicito:** aggiunta una colonna azione fissa a sinistra, sia compatta sia estesa, con pulsante SVG leggero per aprire il dettaglio quiz.

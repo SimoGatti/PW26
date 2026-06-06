@@ -9,6 +9,31 @@ async function startParticipation(utente, quiz) {
     }
 }
 
+function seededRandom(seed) {
+    let value = seed % 2147483647;
+    if (value <= 0) value += 2147483646;
+    return () => {
+        value = value * 16807 % 2147483647;
+        return (value - 1) / 2147483646;
+    };
+}
+
+function stringSeed(value) {
+    return String(value).split('').reduce((hash, char) => {
+        return ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+    }, 0);
+}
+
+function shuffleAnswersForParticipation(risposte, partecipazioneCodice, domandaNumero) {
+    const shuffled = [...risposte];
+    const random = seededRandom(stringSeed(`${partecipazioneCodice}:${domandaNumero}`));
+    for (let index = shuffled.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(random() * (index + 1));
+        [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+    }
+    return shuffled;
+}
+
 async function renderParticipationPlay(quizCodice, partecipazioneCodice) {
     clearFilters();
     renderEmptyFilters();
@@ -40,6 +65,7 @@ async function renderParticipationPlay(quizCodice, partecipazioneCodice) {
             const qCard = document.createElement('div');
             qCard.className = 'question-card';
             const maxSelections = Math.max(1, d.risposte.filter(isCorrectAnswer).length);
+            const shuffledAnswers = shuffleAnswersForParticipation(d.risposte, partecipazioneCodice, d.numero);
             qCard.innerHTML = `
                 <div class="question-header">
                     <span class="question-number">${d.numero}</span>
@@ -47,7 +73,7 @@ async function renderParticipationPlay(quizCodice, partecipazioneCodice) {
                 </div>
                 <p class="question-hint">Puoi selezionare al massimo ${maxSelections} rispost${maxSelections === 1 ? 'a' : 'e'}.</p>
                 <div class="answer-list answer-list-play" data-max-selections="${maxSelections}">
-                    ${d.risposte.map(r => `
+                    ${shuffledAnswers.map(r => `
                         <label class="answer-option">
                             <input type="checkbox" name="q${d.numero}" value="${r.numero}" data-domanda="${d.numero}">
                             <span>${r.testo}</span>
