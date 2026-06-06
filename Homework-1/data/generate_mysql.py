@@ -21,6 +21,8 @@ OUT_SQL      = "quiz_mysql.sql"
 OUT_ODS      = "quiz_data.ods"
 DB_NAME      = "my_namenotfound"
 MAX_DOMANDE  = 20          # vincolo: max domande per quiz
+TODAY        = date(2026, 6, 6)
+OPEN_QUIZZES = 36          # quiz intenzionalmente aperti alla data di riferimento
 random.seed(42)
 
 # ---------------------------------------------------------------------------
@@ -124,9 +126,14 @@ for cat in sorted(cat_domande.keys()):
         creatore     = utenti_nomi[creatore_idx % len(utenti_nomi)]
         creatore_idx += 1
 
-        # Date: scaglionate di 7 giorni tra quiz consecutivi
-        data_inizio = base_start + timedelta(days=(quiz_id - 1) * 7)
-        data_fine   = data_inizio + timedelta(days=60)
+        if quiz_id <= OPEN_QUIZZES:
+            # Un gruppo controllato di quiz resta aperto nel periodo di consegna.
+            data_inizio = TODAY - timedelta(days=10 + (quiz_id % 35))
+            data_fine   = TODAY + timedelta(days=20 + (quiz_id % 45))
+        else:
+            # Gli altri quiz restano storici, evitando date troppo lontane nel futuro.
+            data_inizio = base_start + timedelta(days=(quiz_id - OPEN_QUIZZES - 1) * 3)
+            data_fine   = data_inizio + timedelta(days=60)
 
         titolo = titolo_quiz(cat, chunk_n)
         quiz_list.append((quiz_id, creatore, titolo,
@@ -149,16 +156,23 @@ for cat in sorted(cat_domande.keys()):
                                       testo_err[:999], "Sbagliata", None))
                 risposta_index[(quiz_id, dom_idx)].append(err_i)
 
-all_quiz_ids = list(quiz_date_map.keys())
+eligible_participation_quiz_ids = [
+    qid for qid, (data_inizio, _) in quiz_date_map.items()
+    if data_inizio <= TODAY
+]
 
 # Partecipazioni
 part_id = 0
 for utente in utenti_nomi:
-    campionati = random.sample(all_quiz_ids, random.randint(3, min(8, len(all_quiz_ids))))
+    campionati = random.sample(
+        eligible_participation_quiz_ids,
+        random.randint(3, min(8, len(eligible_participation_quiz_ids)))
+    )
     for qid in campionati:
         part_id += 1
         di, df = quiz_date_map[qid]
-        data_p = rand_date(di, df + timedelta(days=7))
+        data_max = min(df + timedelta(days=7), TODAY)
+        data_p = rand_date(di, data_max)
         part_list.append((part_id, utente, qid, data_p.isoformat()))
 
         # RispostaUtenteQuiz: risponde ad ogni domanda del quiz
