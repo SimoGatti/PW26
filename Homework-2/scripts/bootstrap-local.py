@@ -304,18 +304,18 @@ def provision_database(
         if not role_exists:
             with admin.cursor() as cursor:
                 cursor.execute(
-                    sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(
-                        sql.Identifier(app_user)
-                    ),
-                    (values["POSTGRES_PASSWORD"],),
+                    sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(
+                        sql.Identifier(app_user),
+                        sql.Literal(values["POSTGRES_PASSWORD"]),
+                    )
                 )
         elif app_user == "quizzing_app":
             with admin.cursor() as cursor:
                 cursor.execute(
-                    sql.SQL("ALTER ROLE {} PASSWORD %s").format(
-                        sql.Identifier(app_user)
-                    ),
-                    (values["POSTGRES_PASSWORD"],),
+                    sql.SQL("ALTER ROLE {} PASSWORD {}").format(
+                        sql.Identifier(app_user),
+                        sql.Literal(values["POSTGRES_PASSWORD"]),
+                    )
                 )
 
         if not database_exists:

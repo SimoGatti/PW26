@@ -112,3 +112,11 @@ class SchemaSafetyTests(TestCase):
             re.IGNORECASE | re.MULTILINE,
         )
         self.assertIsNone(destructive.search(source))
+
+    def test_role_password_ddl_does_not_use_bind_parameters(self):
+        source = (ROOT / "scripts" / "bootstrap-local.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn('CREATE ROLE {} LOGIN PASSWORD %s', source)
+        self.assertNotIn('ALTER ROLE {} PASSWORD %s', source)
+        self.assertIn("sql.Literal(values[\"POSTGRES_PASSWORD\"])", source)
