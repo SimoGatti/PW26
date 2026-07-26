@@ -1,1 +1,23 @@
-{% if pages > 1 %}<nav class="pagination">{% if state.page > 1 %}<a href="?{{ state.query }}&page={{ state.page|add:'-1' }}">Precedente</a>{% endif %}<span>Pagina {{ state.page }} di {{ pages }}</span>{% if state.page < pages %}<a href="?{{ state.query }}&page={{ state.page|add:'1' }}">Successiva</a>{% endif %}<form method="get">{% for key,value in state.params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}<label>Vai a pagina <input type="number" name="page" min="1" max="{{ pages }}"></label><button>Vai</button></form></nav>{% endif %}
+{% if pages > 1 %}
+<nav class="pagination pagination-{{ position|default:'bottom' }}" aria-label="Paginazione {{ position|default:'inferiore' }}">
+  <span class="pagination-summary">Pagina {{ state.page }} di {{ pages }}</span>
+  <div class="pagination-actions">
+    {% if state.page > 1 %}
+      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'-1' }}" aria-label="Pagina precedente" title="Pagina precedente">←</a>
+    {% else %}
+      <span class="icon-button disabled" aria-hidden="true">←</span>
+    {% endif %}
+    {% if state.page < pages %}
+      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'1' }}" aria-label="Pagina successiva" title="Pagina successiva">→</a>
+    {% else %}
+      <span class="icon-button disabled" aria-hidden="true">→</span>
+    {% endif %}
+    <form method="get" class="page-jump">
+      {% for key,value in state.params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+      <label for="page-{{ position|default:'bottom' }}">Vai alla pagina</label>
+      <input id="page-{{ position|default:'bottom' }}" type="number" name="page" min="1" max="{{ pages }}" value="{{ state.page }}" aria-label="Numero pagina">
+      <button class="icon-button" aria-label="Vai alla pagina indicata" title="Vai alla pagina">↵</button>
+    </form>
+  </div>
+</nav>
+{% endif %}

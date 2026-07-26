@@ -1,1 +1,22 @@
-{% extends 'base.html' %}{% block content %}<h1>Partecipa a «{{ quiz.titolo }}»</h1><form method="post" class="card">{% csrf_token %}{{ form.as_p }}<button>Inizia</button><a href="{% url 'quiz-detail' quiz.codice %}">Torna al quiz</a></form>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Partecipa a {{ quiz.titolo }} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Prima di iniziare</h2>
+<ol class="compact-steps"><li>Cerca e seleziona l’utente.</li><li>Rispondi alle domande.</li><li>Controlla e invia.</li></ol>
+{% endblock %}
+{% block content %}
+<article class="start-card">
+  <div class="start-icon" aria-hidden="true">▶</div>
+  <p class="eyebrow">Nuova partecipazione</p>
+  <h1>Partecipa a «{{ quiz.titolo }}»</h1>
+  <p class="detail-subtitle">Scegli chi svolgerà il quiz. Le risposte saranno salvate soltanto all’invio finale.</p>
+  <form method="post" class="participant-form card">{% csrf_token %}
+    <label for="{{ form.username.id_for_label }}">Cerca utente</label>
+    <input id="{{ form.username.id_for_label }}" name="username" list="usernames" type="search" value="{{ form.username.value|default:'' }}" placeholder="Digita username, nome o cognome" autocomplete="off" data-suggestions-url="{% url 'user-suggestions' %}" required>
+    <datalist id="usernames"></datalist>
+    <small class="field-hint">Digita almeno due caratteri, poi scegli un risultato.</small>
+    {% for error in form.username.errors %}<small class="error">{{ error }}</small>{% endfor %}
+    <div class="form-actions"><a class="button secondary" href="{% url 'quiz-detail' quiz.codice %}">← Indietro</a><button class="button button-primary">Inizia <span aria-hidden="true">→</span></button></div>
+  </form>
+</article>
+{% endblock %}

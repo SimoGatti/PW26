@@ -1,1 +1,74 @@
-{% extends 'base.html' %}{% block sidebar %}<h2>Filtri</h2><form method="get" class="filters live-filters"><label>Username<input name="username" value="{{ filters.username }}"></label><label>Nome<input name="nome" value="{{ filters.nome }}"></label><label>Cognome<input name="cognome" value="{{ filters.cognome }}"></label><label>Email<input name="email" value="{{ filters.email }}"></label><label>Quiz creati, minimo<input name="created_min" type="number" value="{{ filters.created_min }}"></label><label>Partecipazioni, minimo<input name="participations_min" type="number" value="{{ filters.participations_min }}"></label><label>Risultati per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label><button class="button button-primary">Cerca</button><a class="button" href="{% url 'user-list' %}">Pulisci filtri</a></form>{% endblock %}{% block content %}<div class="content-title"><div><p class="eyebrow">Ricerca</p><h1>Utenti</h1></div><a class="button button-primary" href="{% url 'user-new' %}">Nuovo utente</a></div><div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}">Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}">Estesa</a></div><p class="results-count">{{ total }} risultati</p><div class="table-wrap"><table class="data-table"><tr><th>Username</th><th>Nome</th><th>Cognome</th>{% if view_mode == 'extended' %}<th>Email</th><th>Quiz creati</th><th>Partecipazioni</th>{% endif %}</tr>{% for item in items %}<tr><td><a href="{% url 'user-detail' item.username %}">{{ item.username }}</a></td><td>{{ item.nome }}</td><td>{{ item.cognome }}</td>{% if view_mode == 'extended' %}<td>{{ item.email }}</td><td>{{ item.created }}</td><td>{{ item.participations }}</td>{% endif %}</tr>{% empty %}<tr><td colspan="6">Nessun risultato.</td></tr>{% endfor %}</table></div>{% include 'includes/pagination.html' %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Utenti · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Filtri utenti</h2>
+<form method="get" class="filters live-filters">
+  <input type="hidden" name="mode" value="{{ view_mode }}">
+  <label>Username<input name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
+  <label>Nome<input name="nome" type="search" value="{{ filters.nome }}" autocomplete="off"></label>
+  <label>Cognome<input name="cognome" type="search" value="{{ filters.cognome }}" autocomplete="off"></label>
+  {% if view_mode == 'extended' %}
+    <label>Email<input name="email" type="search" value="{{ filters.email }}" autocomplete="off"></label>
+    <fieldset class="range-filter">
+      <legend>Quiz creati</legend>
+      <div class="range-inputs">
+        <label>Min<input name="created_min" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_min|default:bounds.created_min }}"><output>{{ filters.created_min|default:bounds.created_min }}</output></label>
+        <label>Max<input name="created_max" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_max|default:bounds.created_max }}"><output>{{ filters.created_max|default:bounds.created_max }}</output></label>
+      </div>
+      <small>{{ bounds.created_min }}–{{ bounds.created_max }}</small>
+    </fieldset>
+    <fieldset class="range-filter">
+      <legend>Partecipazioni</legend>
+      <div class="range-inputs">
+        <label>Min<input name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
+        <label>Max<input name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
+      </div>
+      <small>{{ bounds.participations_min }}–{{ bounds.participations_max }}</small>
+    </fieldset>
+  {% endif %}
+  <label>Per pagina
+    <select name="size">
+      <option value="10" {% if state.size == 10 %}selected{% endif %}>10</option>
+      <option value="25" {% if state.size == 25 %}selected{% endif %}>25</option>
+      <option value="50" {% if state.size == 50 %}selected{% endif %}>50</option>
+      <option value="100" {% if state.size == 100 %}selected{% endif %}>100</option>
+    </select>
+  </label>
+  <button class="button button-primary filter-submit">Applica</button>
+  <a class="button secondary" href="{% url 'user-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+</form>
+{% endblock %}
+{% block content %}
+<div class="content-title">
+  <div><p class="eyebrow">Ricerca</p><h1>Utenti</h1></div>
+  <a class="icon-button primary" href="{% url 'user-new' %}" aria-label="Nuovo utente" title="Nuovo utente">＋</a>
+</div>
+<div class="results-toolbar">
+  <div class="view-toggle" aria-label="Densità dati">
+    <a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}" data-live-link>Compatta</a>
+    <a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}" data-live-link>Estesa</a>
+  </div>
+  <p class="results-count">{{ total }} risultati</p>
+</div>
+{% include 'includes/pagination.html' with position='top' %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr>
+      <th><a href="?{{ sort_urls.username }}">Username</a></th>
+      <th><a href="?{{ sort_urls.nome }}">Nome</a></th>
+      <th><a href="?{{ sort_urls.cognome }}">Cognome</a></th>
+      {% if view_mode == 'extended' %}
+        <th>Email</th>
+        <th class="numeric"><a href="?{{ sort_urls.created }}">Quiz creati</a></th>
+        <th class="numeric"><a href="?{{ sort_urls.participations }}">Partecipazioni</a></th>
+      {% endif %}
+    </tr></thead>
+    <tbody>{% for item in items %}<tr>
+      <td><a href="{% url 'user-detail' item.username %}">{{ item.username }}</a></td>
+      <td>{{ item.nome }}</td><td>{{ item.cognome }}</td>
+      {% if view_mode == 'extended' %}<td>{{ item.email }}</td><td class="numeric">{{ item.created }}</td><td class="numeric">{{ item.participations }}</td>{% endif %}
+    </tr>{% empty %}<tr><td colspan="6" class="empty-state">Nessun risultato.</td></tr>{% endfor %}</tbody>
+  </table>
+</div>
+{% include 'includes/pagination.html' with position='bottom' %}
+{% endblock %}

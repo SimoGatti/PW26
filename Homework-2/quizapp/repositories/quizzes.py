@@ -11,14 +11,51 @@ def search(filters, state):
         clauses.append({"future": 'q."dataInizio" > CURRENT_DATE', "open": 'q."dataInizio" <= CURRENT_DATE AND q."dataFine" >= CURRENT_DATE', "closed": 'q."dataFine" < CURRENT_DATE'}[status])
     for f, col, op in [("start_from", 'q."dataInizio"', ">="), ("start_to", 'q."dataInizio"', "<="), ("end_from", 'q."dataFine"', ">="), ("end_to", 'q."dataFine"', "<=")]:
         if filters.get(f): clauses.append(f"{col} {op} %s"); params.append(filters[f])
+    aggregate_filters = []
+    for field, expression in [
+        ("questions_min", "COUNT(DISTINCT d.numero) >= %s"),
+        ("questions_max", "COUNT(DISTINCT d.numero) <= %s"),
+        ("participations_min", "COUNT(DISTINCT p.codice) >= %s"),
+        ("participations_max", "COUNT(DISTINCT p.codice) <= %s"),
+    ]:
+        if filters.get(field):
+            try:
+                params.append(int(filters[field]))
+                aggregate_filters.append(expression)
+            except ValueError:
+                pass
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
-    base = ' FROM "Quiz" q LEFT JOIN "Domanda" d ON d.quiz=q.codice LEFT JOIN "Partecipazione" p ON p.quiz=q.codice' + where + ' GROUP BY q.codice, q.creatore, q.titolo, q."dataInizio", q."dataFine"'
+    having = " HAVING " + " AND ".join(aggregate_filters) if aggregate_filters else ""
+    base = ' FROM "Quiz" q LEFT JOIN "Domanda" d ON d.quiz=q.codice LEFT JOIN "Partecipazione" p ON p.quiz=q.codice' + where + ' GROUP BY q.codice, q.creatore, q.titolo, q."dataInizio", q."dataFine"' + having
     sort={"code":"q.codice","title":"q.titolo","creator":"q.creatore","start":'q."dataInizio"',"end":'q."dataFine"',"questions":"questions","participations":"participations","status":'q."dataFine"'}[state.sort]
     with connection.cursor() as c:
         c.execute("SELECT count(*) FROM (SELECT 1"+base+") x", params); total=c.fetchone()[0]
         c.execute('SELECT q.codice, q.creatore, q.titolo, q."dataInizio" AS start_date, q."dataFine" AS end_date, COUNT(DISTINCT d.numero) AS questions, COUNT(DISTINCT p.codice) AS participations'+base+f' ORDER BY {sort} {state.direction}, q.codice ASC LIMIT %s OFFSET %s',params+[state.size,state.offset]); result=rows(c)
     for q in result: q["status"] = status_for(q["start_date"], q["end_date"])
     return result,total
+
+def bounds():
+    with connection.cursor() as c:
+        c.execute(
+            '''
+            SELECT
+                COALESCE(MIN(questions), 0) AS questions_min,
+                COALESCE(MAX(questions), 0) AS questions_max,
+                COALESCE(MIN(participations), 0) AS participations_min,
+                COALESCE(MAX(participations), 0) AS participations_max
+            FROM (
+                SELECT
+                    q.codice,
+                    COUNT(DISTINCT d.numero) AS questions,
+                    COUNT(DISTINCT p.codice) AS participations
+                FROM "Quiz" q
+                LEFT JOIN "Domanda" d ON d.quiz = q.codice
+                LEFT JOIN "Partecipazione" p ON p.quiz = q.codice
+                GROUP BY q.codice
+            ) aggregates
+            '''
+        )
+        return one(c)
 
 def status_for(start, end):
     today=date.today()

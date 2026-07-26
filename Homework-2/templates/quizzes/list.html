@@ -1,1 +1,78 @@
-{% extends 'base.html' %}{% block sidebar %}<h2>Filtri</h2><form method="get" class="filters live-filters"><label>Codice<input name="code" value="{{ filters.code }}"></label><label>Titolo<input name="title" value="{{ filters.title }}"></label><label>Creatore<input name="creator" value="{{ filters.creator }}"></label><label>Stato<select name="status"><option value="">Tutti</option><option value="future" {% if filters.status == 'future' %}selected{% endif %}>Futuro</option><option value="open" {% if filters.status == 'open' %}selected{% endif %}>Aperto</option><option value="closed" {% if filters.status == 'closed' %}selected{% endif %}>Chiuso</option></select></label><label>Risultati per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label><button class="button button-primary">Cerca</button><a class="button" href="{% url 'quiz-list' %}">Pulisci filtri</a></form>{% endblock %}{% block content %}<div class="content-title"><div><p class="eyebrow">Ricerca</p><h1>Quiz</h1></div></div><div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}">Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}">Estesa</a></div><p class="results-count">{{ total }} risultati</p><div class="table-wrap"><table class="data-table"><tr>{% if view_mode == 'extended' %}<th>Codice</th>{% endif %}<th>Titolo</th><th>Creatore</th><th>Stato</th><th>Domande</th>{% if view_mode == 'extended' %}<th>Inizio</th><th>Fine</th><th>Partecipazioni</th>{% endif %}</tr>{% for item in items %}<tr>{% if view_mode == 'extended' %}<td>{{ item.codice }}</td>{% endif %}<td><a href="{% url 'quiz-detail' item.codice %}">{{ item.titolo }}</a></td><td><a href="{% url 'user-detail' item.creatore %}">{{ item.creatore }}</a></td><td><span class="badge {{ item.status }}">{{ item.status }}</span></td><td>{{ item.questions }}</td>{% if view_mode == 'extended' %}<td>{{ item.start_date }}</td><td>{{ item.end_date }}</td><td>{{ item.participations }}</td>{% endif %}</tr>{% empty %}<tr><td colspan="8">Nessun risultato.</td></tr>{% endfor %}</table></div>{% include 'includes/pagination.html' %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Quiz · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Filtri quiz</h2>
+<form method="get" class="filters live-filters">
+  <input type="hidden" name="mode" value="{{ view_mode }}">
+  {% if view_mode == 'extended' %}<label>Codice<input name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
+  <label>Titolo<input name="title" type="search" value="{{ filters.title }}" autocomplete="off"></label>
+  <label>Creatore<input name="creator" type="search" value="{{ filters.creator }}" autocomplete="off"></label>
+  <label>Stato
+    <select name="status">
+      <option value="">Tutti</option>
+      <option value="future" {% if filters.status == 'future' %}selected{% endif %}>Futuro</option>
+      <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Aperto</option>
+      <option value="closed" {% if filters.status == 'closed' %}selected{% endif %}>Chiuso</option>
+    </select>
+  </label>
+  <fieldset class="range-filter">
+    <legend>Domande</legend>
+    <div class="range-inputs">
+      <label>Min<input name="questions_min" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_min|default:bounds.questions_min }}"><output>{{ filters.questions_min|default:bounds.questions_min }}</output></label>
+      <label>Max<input name="questions_max" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_max|default:bounds.questions_max }}"><output>{{ filters.questions_max|default:bounds.questions_max }}</output></label>
+    </div>
+    <small>{{ bounds.questions_min }}–{{ bounds.questions_max }}</small>
+  </fieldset>
+  {% if view_mode == 'extended' %}
+    <fieldset class="date-filter">
+      <legend>Data inizio</legend>
+      <label>Da<input name="start_from" type="date" value="{{ filters.start_from }}"></label>
+      <div class="date-steppers" data-date-target="start_from"></div>
+      <label>A<input name="start_to" type="date" value="{{ filters.start_to }}"></label>
+      <div class="date-steppers" data-date-target="start_to"></div>
+    </fieldset>
+    <fieldset class="date-filter">
+      <legend>Data fine</legend>
+      <label>Da<input name="end_from" type="date" value="{{ filters.end_from }}"></label>
+      <div class="date-steppers" data-date-target="end_from"></div>
+      <label>A<input name="end_to" type="date" value="{{ filters.end_to }}"></label>
+      <div class="date-steppers" data-date-target="end_to"></div>
+    </fieldset>
+    <fieldset class="range-filter">
+      <legend>Partecipazioni</legend>
+      <div class="range-inputs">
+        <label>Min<input name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
+        <label>Max<input name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
+      </div>
+      <small>{{ bounds.participations_min }}–{{ bounds.participations_max }}</small>
+    </fieldset>
+  {% endif %}
+  <label>Per pagina
+    <select name="size">
+      <option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option>
+    </select>
+  </label>
+  <button class="button button-primary filter-submit">Applica</button>
+  <a class="button secondary" href="{% url 'quiz-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+</form>
+{% endblock %}
+{% block content %}
+<div class="content-title"><div><p class="eyebrow">Ricerca</p><h1>Quiz</h1></div></div>
+<div class="results-toolbar">
+  <div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}" data-live-link>Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}" data-live-link>Estesa</a></div>
+  <p class="results-count">{{ total }} risultati</p>
+</div>
+{% include 'includes/pagination.html' with position='top' %}
+<div class="table-wrap"><table class="data-table">
+  <thead><tr><th class="action-column"><span class="sr-only">Azioni</span></th>{% if view_mode == 'extended' %}<th class="numeric"><a href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}<th><a href="?{{ sort_urls.title }}">Titolo</a></th><th><a href="?{{ sort_urls.creator }}">Creatore</a></th><th><a href="?{{ sort_urls.status }}">Stato</a></th><th class="numeric"><a href="?{{ sort_urls.questions }}">Domande</a></th>{% if view_mode == 'extended' %}<th><a href="?{{ sort_urls.start }}">Inizio</a></th><th><a href="?{{ sort_urls.end }}">Fine</a></th><th class="numeric"><a href="?{{ sort_urls.participations }}">Partecipazioni</a></th>{% endif %}</tr></thead>
+  <tbody>{% for item in items %}<tr>
+    <td class="action-column">{% if item.status == 'open' %}<a class="icon-button play" href="{% url 'participate' item.codice %}" aria-label="Partecipa a {{ item.titolo }}" title="Partecipa">▶</a>{% else %}<a class="icon-button" href="{% url 'quiz-detail' item.codice %}" aria-label="Apri {{ item.titolo }}" title="Dettaglio">↗</a>{% endif %}</td>
+    {% if view_mode == 'extended' %}<td class="numeric">{{ item.codice }}</td>{% endif %}
+    <td><a href="{% url 'quiz-detail' item.codice %}">{{ item.titolo }}</a></td><td><a href="{% url 'user-detail' item.creatore %}">{{ item.creatore }}</a></td>
+    <td><span class="badge {{ item.status }}">{% if item.status == 'open' %}Aperto{% elif item.status == 'future' %}Futuro{% else %}Chiuso{% endif %}</span></td>
+    <td class="numeric">{{ item.questions }}</td>
+    {% if view_mode == 'extended' %}<td class="numeric">{{ item.start_date|date:"d/m/Y" }}</td><td class="numeric">{{ item.end_date|date:"d/m/Y" }}</td><td class="numeric">{{ item.participations }}</td>{% endif %}
+  </tr>{% empty %}<tr><td colspan="9" class="empty-state">Nessun risultato.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% include 'includes/pagination.html' with position='bottom' %}
+{% endblock %}

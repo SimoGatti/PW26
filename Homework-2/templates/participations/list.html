@@ -1,1 +1,50 @@
-{% extends 'base.html' %}{% block sidebar %}<h2>Filtri</h2><form method="get" class="filters live-filters"><label>Codice<input name="code" value="{{ filters.code }}"></label><label>Utente<input name="username" value="{{ filters.username }}"></label><label>Quiz<input name="quiz" value="{{ filters.quiz }}"></label><label>Risultati per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label><button class="button button-primary">Cerca</button><a class="button" href="{% url 'participation-list' %}">Pulisci filtri</a></form>{% endblock %}{% block content %}<div class="content-title"><div><p class="eyebrow">Ricerca</p><h1>Partecipazioni</h1></div></div><div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}">Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}">Estesa</a></div><p class="results-count">{{ total }} risultati</p><div class="table-wrap"><table class="data-table"><tr>{% if view_mode == 'extended' %}<th>Codice</th>{% endif %}<th>Utente</th><th>Quiz</th>{% if view_mode == 'extended' %}<th>Data</th>{% endif %}<th>Risposte</th><th>Punteggio</th></tr>{% for item in items %}<tr>{% if view_mode == 'extended' %}<td><a href="{% url 'participation-detail' item.codice %}">{{ item.codice }}</a></td>{% endif %}<td><a href="{% url 'user-detail' item.utente %}">{{ item.utente }}</a></td><td><a href="{% url 'quiz-detail' item.quiz %}">{{ item.titolo }}</a></td>{% if view_mode == 'extended' %}<td>{{ item.data }}</td>{% endif %}<td>{{ item.answers }}</td><td>{{ item.score }}</td></tr>{% empty %}<tr><td colspan="6">Nessun risultato.</td></tr>{% endfor %}</table></div>{% include 'includes/pagination.html' %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Partecipazioni · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Filtri partecipazioni</h2>
+<form method="get" class="filters live-filters">
+  <input type="hidden" name="mode" value="{{ view_mode }}">
+  {% if view_mode == 'extended' %}<label>Codice<input name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
+  <label>Utente<input name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
+  <label>Quiz<input name="quiz" type="search" value="{{ filters.quiz }}" autocomplete="off"></label>
+  {% if view_mode == 'extended' %}
+    <fieldset class="date-filter">
+      <legend>Data</legend>
+      <label>Da<input name="date_from" type="date" value="{{ filters.date_from }}"></label><div class="date-steppers" data-date-target="date_from"></div>
+      <label>A<input name="date_to" type="date" value="{{ filters.date_to }}"></label><div class="date-steppers" data-date-target="date_to"></div>
+    </fieldset>
+  {% endif %}
+  <fieldset class="range-filter">
+    <legend>Risposte</legend>
+    <div class="range-inputs">
+      <label>Min<input name="answers_min" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_min|default:bounds.answers_min }}"><output>{{ filters.answers_min|default:bounds.answers_min }}</output></label>
+      <label>Max<input name="answers_max" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_max|default:bounds.answers_max }}"><output>{{ filters.answers_max|default:bounds.answers_max }}</output></label>
+    </div><small>{{ bounds.answers_min }}–{{ bounds.answers_max }}</small>
+  </fieldset>
+  <fieldset class="range-filter">
+    <legend>Punteggio</legend>
+    <div class="range-inputs">
+      <label>Min<input name="score_min" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_min|default:bounds.score_min }}"><output>{{ filters.score_min|default:bounds.score_min }}</output></label>
+      <label>Max<input name="score_max" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_max|default:bounds.score_max }}"><output>{{ filters.score_max|default:bounds.score_max }}</output></label>
+    </div><small>{{ bounds.score_min }}–{{ bounds.score_max }}</small>
+  </fieldset>
+  <label>Per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label>
+  <button class="button button-primary filter-submit">Applica</button>
+  <a class="button secondary" href="{% url 'participation-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+</form>
+{% endblock %}
+{% block content %}
+<div class="content-title"><div><p class="eyebrow">Ricerca</p><h1>Partecipazioni</h1></div></div>
+<div class="results-toolbar"><div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}" data-live-link>Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}" data-live-link>Estesa</a></div><p class="results-count">{{ total }} risultati</p></div>
+{% include 'includes/pagination.html' with position='top' %}
+<div class="table-wrap"><table class="data-table">
+  <thead><tr><th class="action-column"><span class="sr-only">Azioni</span></th>{% if view_mode == 'extended' %}<th class="numeric"><a href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}<th><a href="?{{ sort_urls.username }}">Utente</a></th><th><a href="?{{ sort_urls.quiz }}">Quiz</a></th>{% if view_mode == 'extended' %}<th><a href="?{{ sort_urls.date }}">Data</a></th>{% endif %}<th class="numeric"><a href="?{{ sort_urls.answers }}">Risposte</a></th><th class="numeric"><a href="?{{ sort_urls.score }}">Punteggio</a></th></tr></thead>
+  <tbody>{% for item in items %}<tr>
+    <td class="action-column"><a class="icon-button" href="{% url 'participation-detail' item.codice %}" aria-label="Apri partecipazione {{ item.codice }}" title="Dettaglio">↗</a></td>
+    {% if view_mode == 'extended' %}<td class="numeric"><a href="{% url 'participation-detail' item.codice %}">{{ item.codice }}</a></td>{% endif %}
+    <td><a href="{% url 'user-detail' item.utente %}">{{ item.utente }}</a></td><td><a href="{% url 'quiz-detail' item.quiz %}">{{ item.titolo }}</a></td>
+    {% if view_mode == 'extended' %}<td class="numeric">{{ item.data|date:"d/m/Y" }}</td>{% endif %}<td class="numeric">{{ item.answers }}</td><td class="numeric">{{ item.score }}</td>
+  </tr>{% empty %}<tr><td colspan="7" class="empty-state">Nessun risultato.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% include 'includes/pagination.html' with position='bottom' %}
+{% endblock %}

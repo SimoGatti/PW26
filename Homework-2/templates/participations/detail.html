@@ -1,1 +1,20 @@
-{% extends 'base.html' %}{% block content %}<h1>Partecipazione a «{{ participation.titolo }}»</h1><p>Codice {{ participation.codice }} · <a href="{% url 'user-detail' participation.utente %}">{{ participation.utente }}</a> · <a href="{% url 'quiz-detail' participation.quiz %}">Quiz</a> · {{ participation.data }} · Punteggio {{ participation.score }}</p>{% for question in participation.questions %}<details><summary>Domanda {{ question.number }}: {{ question.text }}</summary><ul>{% for answer in question.answers %}<li>{% if answer.selected %}<strong>Selezionata:</strong>{% endif %} {{ answer.answer_text }} {% if answer.selected and answer.tipo == 'Corretta' %}(+{{ answer.punteggio }}){% endif %}</li>{% endfor %}</ul></details>{% endfor %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Partecipazione a {{ participation.titolo }} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Riepilogo</h2>
+<dl class="metadata-list">
+  <div><dt>Codice</dt><dd class="numeric">{{ participation.codice }}</dd></div>
+  <div><dt>Utente</dt><dd><a href="{% url 'user-detail' participation.utente %}">{{ participation.utente }}</a></dd></div>
+  <div><dt>Data</dt><dd class="numeric">{{ participation.data|date:"d/m/Y" }}</dd></div>
+  <div><dt>Punteggio</dt><dd class="score">{{ participation.score }}</dd></div>
+</dl>
+{% endblock %}
+{% block content %}
+<article class="detail-page">
+  <div class="detail-hero"><div><p class="eyebrow">Dettaglio partecipazione</p><h1>Partecipazione a «{{ participation.titolo }}»</h1><p class="detail-subtitle">Risposte e punteggi, domanda per domanda.</p></div><div class="icon-actions"><a class="icon-button" href="{% url 'quiz-detail' participation.quiz %}" aria-label="Apri il quiz" title="Apri il quiz">↗</a>{% if participation.quiz_status == 'open' %}<a class="icon-button play" href="{% url 'participate' participation.quiz %}" aria-label="Partecipa di nuovo al quiz" title="Partecipa">▶</a>{% endif %}</div></div>
+  <section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Risultato</p><h2 class="content-heading">Domande</h2></div></div>
+    <div class="question-stack">{% for question in participation.questions %}<details class="question-card"><summary><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></summary><ul class="answer-list">{% for answer in question.answers %}<li class="{% if answer.selected %}selected-answer{% endif %}"><span>{% if answer.selected %}<strong class="selected-marker">✓ Scelta</strong>{% endif %}{{ answer.answer_text }}</span>{% if answer.selected %}<span class="answer-score">{% if answer.tipo == 'Corretta' %}+{{ answer.punteggio }} pt{% else %}0 pt{% endif %}</span>{% endif %}</li>{% endfor %}</ul></details>{% endfor %}</div>
+  </section>
+</article>
+{% endblock %}

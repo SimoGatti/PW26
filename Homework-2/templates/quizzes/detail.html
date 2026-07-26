@@ -1,1 +1,29 @@
-{% extends 'base.html' %}{% block content %}<h1>{{ quiz.titolo }}</h1><p>Creatore: <a href="{% url 'user-detail' quiz.creatore %}">{{ quiz.creatore }}</a> · {{ quiz.start_date }} – {{ quiz.end_date }} · <span class="badge {{ quiz.status }}">{{ quiz.status }}</span></p>{% if quiz.status == 'open' %}<a class="button" href="{% url 'participate' quiz.codice %}">Partecipa al quiz</a>{% endif %}<h2>Domande</h2>{% for question in quiz.question_list %}<details><summary>{{ question.number }}. {{ question.text }}</summary><ul>{% for answer in question.answers %}<li>{{ answer.answer_text }} <span class="solution">Soluzione: {{ answer.tipo }}</span></li>{% endfor %}</ul></details>{% endfor %}<h2>Partecipanti</h2><ul>{% for p in quiz.participation_list %}<li><a href="{% url 'participation-detail' p.codice %}">{{ p.utente }}</a></li>{% empty %}<li>Nessuna partecipazione.</li>{% endfor %}</ul>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{{ quiz.titolo }} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Quiz {{ quiz.codice }}</h2>
+<dl class="metadata-list">
+  <div><dt>Creatore</dt><dd><a href="{% url 'user-detail' quiz.creatore %}">{{ quiz.creatore }}</a></dd></div>
+  <div><dt>Periodo</dt><dd class="numeric">{{ quiz.start_date|date:"d/m/Y" }}<br>{{ quiz.end_date|date:"d/m/Y" }}</dd></div>
+  <div><dt>Domande</dt><dd>{{ quiz.questions }}</dd></div>
+  <div><dt>Partecipazioni</dt><dd>{{ quiz.participations }}</dd></div>
+</dl>
+{% endblock %}
+{% block content %}
+<article class="detail-page">
+  <div class="detail-hero">
+    <div><p class="eyebrow">Dettaglio quiz</p><h1>{{ quiz.titolo }}</h1><span class="badge {{ quiz.status }}">{% if quiz.status == 'open' %}Aperto{% elif quiz.status == 'future' %}Futuro{% else %}Chiuso{% endif %}</span></div>
+    {% if quiz.status == 'open' %}<a class="participate-cta" href="{% url 'participate' quiz.codice %}"><span aria-hidden="true">▶</span><span><strong>Partecipa</strong><small>Scegli l’utente e inizia</small></span></a>{% endif %}
+  </div>
+  <section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Contenuto</p><h2 class="content-heading">Domande</h2></div><button type="button" class="button secondary solutions-toggle" aria-pressed="false">Mostra soluzioni</button></div>
+    <div class="question-stack solutions-hidden">
+      {% for question in quiz.question_list %}<details class="question-card"><summary><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></summary><ul class="answer-list">{% for answer in question.answers %}<li><span>{{ answer.answer_text }}</span><span class="solution">{% if answer.tipo == 'Corretta' %}Corretta · {{ answer.punteggio }} pt{% else %}Errata{% endif %}</span></li>{% endfor %}</ul></details>{% endfor %}
+    </div>
+  </section>
+  <section class="content-section">
+    <p class="eyebrow">Attività</p><h2 class="content-heading">Partecipanti</h2>
+    <div class="link-list">{% for p in quiz.participation_list %}<a href="{% url 'participation-detail' p.codice %}"><span>{{ p.utente }}</span><small>{{ p.data|date:"d/m/Y" }}</small><span aria-hidden="true">↗</span></a>{% empty %}<p class="empty-state">Nessuna partecipazione.</p>{% endfor %}</div>
+  </section>
+</article>
+{% endblock %}

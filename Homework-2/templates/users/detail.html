@@ -1,1 +1,22 @@
-{% extends 'base.html' %}{% block content %}<div class="title"><h1>{{ user.nomeUtente }}</h1><span><a href="{% url 'user-edit' user.nomeUtente %}">Modifica</a> · <a href="{% url 'user-delete' user.nomeUtente %}">Elimina</a></span></div><dl><dt>Nome</dt><dd>{{ user.nome }} {{ user.cognome }}</dd><dt>Email</dt><dd>{{ user.email }}</dd></dl><h2>Quiz creati</h2><ul>{% for quiz in user.quizzes %}<li><a href="{% url 'quiz-detail' quiz.codice %}">{{ quiz.titolo }}</a></li>{% empty %}<li>Nessun quiz creato.</li>{% endfor %}</ul><h2>Partecipazioni</h2><ul>{% for participation in user.participation_list %}<li><a href="{% url 'participation-detail' participation.codice %}">{{ participation.titolo }}</a> ({{ participation.data }})</li>{% empty %}<li>Nessuna partecipazione.</li>{% endfor %}</ul>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{{ user.nomeUtente }} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Profilo</h2>
+<dl class="metadata-list">
+  <div><dt>Nome</dt><dd>{{ user.nome }} {{ user.cognome }}</dd></div>
+  <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+</dl>
+{% endblock %}
+{% block content %}
+<article class="detail-page">
+  <div class="detail-hero">
+    <div><p class="eyebrow">Dettaglio utente</p><h1>{{ user.nomeUtente }}</h1></div>
+    <div class="icon-actions">
+      <a class="icon-button" href="{% url 'user-edit' user.nomeUtente %}" aria-label="Modifica utente" title="Modifica">✎</a>
+      <a class="icon-button danger-outline" href="{% url 'user-delete' user.nomeUtente %}" aria-label="Elimina utente" title="Elimina">⌫</a>
+    </div>
+  </div>
+  <section class="content-section"><p class="eyebrow">Creati</p><h2 class="content-heading">Quiz</h2><div class="link-list">{% for quiz in user.quizzes %}<a href="{% url 'quiz-detail' quiz.codice %}"><span>{{ quiz.titolo }}</span><span aria-hidden="true">↗</span></a>{% empty %}<p class="empty-state">Nessun quiz creato.</p>{% endfor %}</div></section>
+  <section class="content-section"><p class="eyebrow">Svolti</p><h2 class="content-heading">Partecipazioni</h2><div class="link-list">{% for participation in user.participation_list %}<a href="{% url 'participation-detail' participation.codice %}"><span>{{ participation.titolo }}</span><small>{{ participation.data|date:"d/m/Y" }}</small><span aria-hidden="true">↗</span></a>{% empty %}<p class="empty-state">Nessuna partecipazione.</p>{% endfor %}</div></section>
+</article>
+{% endblock %}

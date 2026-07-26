@@ -1,7 +1,7 @@
 from math import ceil
 from django.contrib import messages
 from django.db import IntegrityError
-from django.http import Http404, HttpResponseNotAllowed
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import redirect, render
 from .forms import ParticipantForm, UserForm
 from .repositories import quizzes, participations, users
@@ -9,7 +9,7 @@ from .repositories.common import list_state
 from .services import quiz_attempt, user_deletion
 
 def listing(request, kind):
-    config={"users":(users.search,{"username","nome","cognome","created","participations"},"username"),"quizzes":(quizzes.search,{"code","title","creator","status","start","end","questions","participations"},"code"),"participations":(participations.search,{"code","username","quiz","date","answers","score"},"date")}[kind]
+    config={"users":(users.search,{"username","nome","cognome","created","participations"},"username"),"quizzes":(quizzes.search,{"code","title","creator","status","start","end","questions","participations"},"title"),"participations":(participations.search,{"code","username","quiz","date","answers","score"},"score")}[kind]
     state=list_state(request,config[1],config[2]);filters={k:v for k,v in request.GET.items() if k not in {"page","size","sort","dir","mode"}}
     view_mode=request.GET.get("mode", "compact")
     if view_mode not in {"compact", "extended"}: view_mode="compact"
@@ -19,12 +19,23 @@ def listing(request, kind):
     for sort_key in config[1]:
         next_direction = "desc" if state.sort == sort_key and state.direction == "asc" else "asc"
         sort_urls[sort_key] = state.query(sort=sort_key, dir=next_direction, page=1)
-    return render(request,f"{kind}/list.html",{"items":result,"total":total,"state":state,"pages":pages,"filters":filters,"kind":kind,"view_mode":view_mode,"compact_query":state.query(mode="compact",page=1),"extended_query":state.query(mode="extended",page=1),"sort_urls":sort_urls})
+    bounds_provider = {
+        "users": users.bounds,
+        "quizzes": quizzes.bounds,
+        "participations": participations.bounds,
+    }[kind]
+    return render(request,f"{kind}/list.html",{"items":result,"total":total,"state":state,"pages":pages,"filters":filters,"bounds":bounds_provider(),"kind":kind,"view_mode":view_mode,"compact_query":state.query(mode="compact",page=1),"extended_query":state.query(mode="extended",page=1),"sort_urls":sort_urls})
 
 def home(request): return render(request,"home.html",{"stats":users.stats()})
 def user_list(request): return listing(request,"users")
 def quiz_list(request): return listing(request,"quizzes")
 def participation_list(request): return listing(request,"participations")
+
+def user_suggestions(request):
+    query = request.GET.get("q", "").strip()
+    if len(query) < 2:
+        return JsonResponse({"items": []})
+    return JsonResponse({"items": users.username_suggestions(query)})
 
 def user_detail(request,username):
     user=users.detail(username)
