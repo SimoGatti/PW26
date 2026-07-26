@@ -196,6 +196,36 @@ def add_status_fixtures(cursor):
                 'SELECT %s, domanda, numero, testo, tipo, punteggio FROM "Risposta" WHERE quiz=%s',
                 [fixture_code, source_code],
             )
+            if label == "aperto":
+                add_multiple_choice_question(cursor, fixture_code)
+
+
+def add_multiple_choice_question(cursor, quiz_code):
+    """Aggiunge un caso semanticamente valido che richiede più selezioni."""
+    cursor.execute(
+        'SELECT COALESCE(MAX(numero), 0) + 1 FROM "Domanda" WHERE quiz=%s',
+        [quiz_code],
+    )
+    question_number = cursor.fetchone()[0]
+    cursor.execute(
+        'INSERT INTO "Domanda" (quiz, numero, testo) VALUES (%s, %s, %s)',
+        [
+            quiz_code,
+            question_number,
+            "Seleziona tutti e soli i numeri pari.",
+        ],
+    )
+    cursor.executemany(
+        'INSERT INTO "Risposta" '
+        '(quiz, domanda, numero, testo, tipo, punteggio) '
+        'VALUES (%s, %s, %s, %s, %s, %s)',
+        [
+            (quiz_code, question_number, 1, "2", "Corretta", 1),
+            (quiz_code, question_number, 2, "3", "Sbagliata", None),
+            (quiz_code, question_number, 3, "4", "Corretta", 1),
+            (quiz_code, question_number, 4, "5", "Sbagliata", None),
+        ],
+    )
 
 
 def main():

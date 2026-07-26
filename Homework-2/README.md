@@ -46,6 +46,37 @@ http://127.0.0.1:8000/
 
 Interrompere Django con `Ctrl+C`.
 
+## Guida utente
+
+La barra di navigazione contiene quattro aree:
+
+- **Home** riassume lo scopo dell'applicazione e mostra i dati principali;
+- **Utenti** permette di cercare i profili e aprirne il dettaglio;
+- **Quiz** permette di esplorare quiz futuri, aperti e chiusi;
+- **Partecipazioni** mostra i tentativi conclusi e il relativo punteggio.
+
+Nelle pagine di ricerca i filtri aggiornano i risultati durante la
+digitazione. **Pulisci filtri** ripristina l'elenco completo. Un click sul nome
+di una colonna ordina i dati; la freccia evidenziata mostra se l'ordine è
+crescente o decrescente. Le viste **Compatta** ed **Estesa** cambiano soltanto
+la quantità di informazioni mostrate. Sopra e sotto la tabella si può cambiare
+pagina oppure digitare direttamente il numero desiderato.
+
+Per svolgere un quiz:
+
+1. aprire **Quiz** e scegliere un quiz con stato **Aperto**;
+2. premere **Partecipa** e cercare l'utente con username, nome o cognome;
+3. rispondere a ogni domanda: i cerchi indicano una sola risposta possibile,
+   i quadrati consentono più selezioni;
+4. premere **Invia risposte** per salvare definitivamente il tentativo;
+5. usare **Abbandona quiz** per uscire senza salvare, confermando nella
+   finestra interna all'applicazione.
+
+Dal dettaglio di un utente si raggiungono i quiz creati e le partecipazioni
+effettuate. Le icone in alto consentono di modificare o eliminare l'utente.
+Prima dell'eliminazione viene mostrato un riepilogo; l'operazione è bloccata se
+esistono partecipazioni ai quiz creati da quel profilo.
+
 ## Prerequisiti
 
 - Python **3.12 o successivo** disponibile come `python3.12`, `python3`,
@@ -245,7 +276,9 @@ Il bootstrap usa `database/import_mysql_dump.py` per leggere esclusivamente gli
 nel file non vengono eseguite.
 
 L'importatore aggiunge inoltre quiz aperti e futuri con date relative al giorno
-di installazione, senza modificare i quiz storici del dump.
+di installazione, senza modificare i quiz storici del dump. Ogni quiz demo
+aperto include anche una domanda con due risposte corrette, così il flusso
+esercita realmente sia i radio button sia le checkbox.
 
 L'importazione viene proposta soltanto se tutte e sei le tabelle applicative
 sono vuote. Anche l'esecuzione manuale è protetta:

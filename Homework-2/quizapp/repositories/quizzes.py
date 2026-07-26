@@ -27,7 +27,21 @@ def search(filters, state):
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
     having = " HAVING " + " AND ".join(aggregate_filters) if aggregate_filters else ""
     base = ' FROM "Quiz" q LEFT JOIN "Domanda" d ON d.quiz=q.codice LEFT JOIN "Partecipazione" p ON p.quiz=q.codice' + where + ' GROUP BY q.codice, q.creatore, q.titolo, q."dataInizio", q."dataFine"' + having
-    sort={"code":"q.codice","title":"q.titolo","creator":"q.creatore","start":'q."dataInizio"',"end":'q."dataFine"',"questions":"questions","participations":"participations","status":'q."dataFine"'}[state.sort]
+    sort={
+        "code":"q.codice",
+        "title":"q.titolo",
+        "creator":"q.creatore",
+        "start":'q."dataInizio"',
+        "end":'q."dataFine"',
+        "questions":"questions",
+        "participations":"participations",
+        "status":(
+            'CASE '
+            'WHEN q."dataInizio" > CURRENT_DATE THEN 1 '
+            'WHEN q."dataFine" < CURRENT_DATE THEN 3 '
+            'ELSE 2 END'
+        ),
+    }[state.sort]
     with connection.cursor() as c:
         c.execute("SELECT count(*) FROM (SELECT 1"+base+") x", params); total=c.fetchone()[0]
         c.execute('SELECT q.codice, q.creatore, q.titolo, q."dataInizio" AS start_date, q."dataFine" AS end_date, COUNT(DISTINCT d.numero) AS questions, COUNT(DISTINCT p.codice) AS participations'+base+f' ORDER BY {sort} {state.direction}, q.codice ASC LIMIT %s OFFSET %s',params+[state.size,state.offset]); result=rows(c)
