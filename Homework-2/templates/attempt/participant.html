@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>Partecipa a «{{ quiz.titolo }}»</h1><form method="post" class="card">{% csrf_token %}{{ form.as_p }}<button>Inizia</button><a href="{% url 'quiz-detail' quiz.codice %}">Torna al quiz</a></form>{% endblock %}
