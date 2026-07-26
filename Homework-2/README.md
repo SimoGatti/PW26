@@ -1,6 +1,6 @@
 # QUIZZING 2
 
-Ristrutturazione server-side del Progetto 1 basata su Python 3.12, Django
+Ristrutturazione server-side del Progetto 1 basata su Python 3.12 o successivo, Django
 Templates, PostgreSQL, SQL esplicito e Bootstrap locale.
 
 `Homework-1` resta una sorgente di dati e un riferimento funzionale: gli
@@ -47,8 +47,8 @@ Interrompere Django con `Ctrl+C`.
 
 ## Prerequisiti
 
-- Python **3.12** disponibile come `python3.12`, `python` oppure, su Windows,
-  tramite `py -3.12`;
+- Python **3.12 o successivo** disponibile come `python3.12`, `python3`,
+  `python` oppure, su Windows, tramite `py -3.12` o `py -3`;
 - PostgreSQL locale già installato e avviato;
 - accesso amministrativo a PostgreSQL soltanto durante l'eventuale prima
   inizializzazione;
@@ -67,7 +67,7 @@ scripts/bootstrap-local.py
 
 Il flusso è:
 
-1. verificare Python 3.12 e `requirements.txt`;
+1. verificare la presenza di Python 3.12 o successivo e `requirements.txt`;
 2. creare `.venv` quando manca;
 3. installare o allineare le dipendenze con `pip`;
 4. creare o completare `.env`;

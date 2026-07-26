@@ -38,9 +38,10 @@ function Invoke-NativeChecked {
     }
 }
 
-function Get-Python312 {
+function Get-SupportedPython {
     $Candidates = @(
         @{ Executable = "py"; Arguments = @("-3.12") },
+        @{ Executable = "py"; Arguments = @("-3") },
         @{ Executable = "python"; Arguments = @() }
     )
     foreach ($Candidate in $Candidates) {
@@ -53,7 +54,7 @@ function Get-Python312 {
         try {
             $ErrorActionPreference = "Continue"
             & $CandidateExecutable @CandidateArguments -c `
-                "import sys; raise SystemExit(sys.version_info[:2] != (3, 12))" `
+                "import sys; raise SystemExit(sys.version_info < (3, 12))" `
                 *> $null
             if ($LASTEXITCODE -eq 0) {
                 return $Candidate
@@ -72,9 +73,9 @@ try {
     }
 
     if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
-        $SystemPython = Get-Python312
+        $SystemPython = Get-SupportedPython
         if ($null -eq $SystemPython) {
-            throw "Python 3.12 non trovato. Installarlo e rendere disponibile py.exe."
+            throw "Python 3.12 o successivo non trovato. Installarlo e rendere disponibile py.exe o python.exe."
         }
         $VenvArguments = @($SystemPython["Arguments"]) + @("-m", "venv", $VenvDir)
         Invoke-NativeChecked `
@@ -84,11 +85,11 @@ try {
     }
 
     Invoke-NativeChecked `
-        -Step "Verifica di Python 3.12" `
+        -Step "Verifica di Python 3.12 o successivo" `
         -Executable $Python `
         -Arguments @(
             "-c",
-            "import sys; print(sys.version); raise SystemExit(sys.version_info[:2] != (3, 12))"
+            "import sys; print(sys.version); raise SystemExit(sys.version_info < (3, 12))"
         )
 
     Invoke-NativeChecked `

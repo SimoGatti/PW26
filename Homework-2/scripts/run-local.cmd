@@ -18,7 +18,7 @@ if not exist "%REQUIREMENTS%" (
 if not exist "%PYTHON%" (
     call :find_python
     if errorlevel 1 (
-        echo ERRORE: Python 3.12 non trovato. 1>&2
+        echo ERRORE: Python 3.12 o successivo non trovato. 1>&2
         echo Installarlo e rendere disponibile py.exe o python.exe nel PATH. 1>&2
         exit /b 1
     )
@@ -31,7 +31,7 @@ if not exist "%PYTHON%" (
     )
 )
 
-call :run_checked "Verifica di Python 3.12" "%PYTHON%" -c "import sys; print(sys.version); raise SystemExit(sys.version_info[:2] != (3, 12))"
+call :run_checked "Verifica di Python 3.12 o successivo" "%PYTHON%" -c "import sys; print(sys.version); raise SystemExit(sys.version_info < (3, 12))"
 if errorlevel 1 exit /b %ERRORLEVEL%
 
 call :run_checked "Installazione o allineamento delle dipendenze" "%PYTHON%" -m pip install --disable-pip-version-check -r "%REQUIREMENTS%"
@@ -59,12 +59,17 @@ if not "%STEP_CODE%"=="0" (
 exit /b 0
 
 :find_python
-py -3.12 -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 12))" >nul 2>&1
+py -3.12 -c "import sys; raise SystemExit(sys.version_info < (3, 12))" >nul 2>&1
 if not errorlevel 1 (
     set "SYSTEM_PYTHON=py -3.12"
     exit /b 0
 )
-python -c "import sys; raise SystemExit(sys.version_info[:2] != (3, 12))" >nul 2>&1
+py -3 -c "import sys; raise SystemExit(sys.version_info < (3, 12))" >nul 2>&1
+if not errorlevel 1 (
+    set "SYSTEM_PYTHON=py -3"
+    exit /b 0
+)
+python -c "import sys; raise SystemExit(sys.version_info < (3, 12))" >nul 2>&1
 if not errorlevel 1 (
     set "SYSTEM_PYTHON=python"
     exit /b 0

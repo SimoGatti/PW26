@@ -25,12 +25,12 @@ run_checked() {
     "$@" || die "$step non riuscita (codice $?)."
 }
 
-find_python_312() {
+find_supported_python() {
     local candidate
     for candidate in python3.12 python3 python; do
         if command -v "$candidate" >/dev/null 2>&1 &&
            "$candidate" -c \
-             'import sys; raise SystemExit(sys.version_info[:2] != (3, 12))' \
+             'import sys; raise SystemExit(sys.version_info < (3, 12))' \
              >/dev/null 2>&1; then
             command -v "$candidate"
             return 0
@@ -43,18 +43,18 @@ find_python_312() {
     die "requirements.txt non trovato: $REQUIREMENTS"
 
 if [[ ! -x "$PYTHON" ]]; then
-    SYSTEM_PYTHON="$(find_python_312 || true)"
+    SYSTEM_PYTHON="$(find_supported_python || true)"
     [[ -n "$SYSTEM_PYTHON" ]] ||
-        die "Python 3.12 non trovato. Su macOS: brew install python@3.12"
+        die "Python 3.12 o successivo non trovato. Su macOS: brew install python"
     run_checked \
         "Creazione dell'ambiente virtuale" \
         "$SYSTEM_PYTHON" -m venv "$VENV_DIR"
 fi
 
 run_checked \
-    "Verifica di Python 3.12" \
+    "Verifica di Python 3.12 o successivo" \
     "$PYTHON" -c \
-    'import sys; print(sys.version); raise SystemExit(sys.version_info[:2] != (3, 12))'
+    'import sys; print(sys.version); raise SystemExit(sys.version_info < (3, 12))'
 run_checked \
     "Installazione o allineamento delle dipendenze" \
     "$PYTHON" -m pip install --disable-pip-version-check -r "$REQUIREMENTS"
