@@ -9,7 +9,7 @@ from django.urls import reverse
 from .forms import ParticipantForm, UserForm
 from .repositories import quizzes, participations, users
 from .repositories.common import list_state
-from .services import quiz_attempt, user_deletion
+from .services import answer_order, quiz_attempt, user_deletion
 
 def listing(request, kind):
     """Costruisce una lista paginata usando la query string come unico stato."""
@@ -73,11 +73,13 @@ def user_delete(request,username):
 def quiz_detail(request,code):
     quiz=quizzes.detail(code)
     if not quiz:raise Http404
+    answer_order.randomize_question_answers(quiz["question_list"])
     return render(request,"quizzes/detail.html",{"quiz":quiz})
 
 def participation_detail(request,code):
     participation=participations.detail(code)
     if not participation:raise Http404
+    answer_order.randomize_question_answers(participation["questions"])
     return render(request,"participations/detail.html",{"participation":participation,"solutions_visible":request.GET.get("review")=="1"})
 
 def participate(request,code):

@@ -3,14 +3,20 @@
 import secrets
 from datetime import date
 from django.db import connection, transaction
+from .answer_order import shuffled
 
 SESSION_KEY="quiz_attempt"
 
 def start(session, quiz, username):
     """Crea token e ordine casuale stabile senza scrivere dati applicativi."""
-    ordered={str(q["number"]): [a["answer_number"] for a in q["answers"] for _ in [0]] for q in quiz["question_list"]}
-    for values in ordered.values():
-        secrets.SystemRandom().shuffle(values)
+    randomizer = secrets.SystemRandom()
+    ordered = {
+        str(question["number"]): shuffled(
+            (answer["answer_number"] for answer in question["answers"]),
+            randomizer,
+        )
+        for question in quiz["question_list"]
+    }
     session[SESSION_KEY]={"token":secrets.token_urlsafe(32),"quiz_code":quiz["codice"],"username":username,"order":ordered,"selected":{}}
     session.modified=True
 
