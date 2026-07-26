@@ -1,13 +1,17 @@
-# Avvia QUIZZING 2 usando esclusivamente l'ambiente virtuale locale esistente.
+# Avvia QUIZZING 2 usando l'ambiente virtuale locale.
+#
+# Se .venv non esiste:
+# - lo crea;
+# - installa le dipendenze da requirements.txt.
+#
+# Se .venv esiste:
+# - verifica/allinea le dipendenze tramite requirements.txt.
+#
 # Non crea, non migra e non reimporta il database.
-# Queste operazioni appartengono soltanto alla prima installazione documentata
-# nel README.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# Evita che PowerShell 7 trasformi automaticamente ogni codice di uscita
-# non-zero di un comando nativo in un'eccezione prima del nostro controllo.
 if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
     $PSNativeCommandUseErrorActionPreference = $false
 }
@@ -16,15 +20,67 @@ $ProjectDir = [System.IO.Path]::GetFullPath(
     (Join-Path $PSScriptRoot "..")
 )
 
-$Python = Join-Path $ProjectDir ".venv\Scripts\python.exe"
+$VenvDir = Join-Path $ProjectDir ".venv"
+$Requirements = Join-Path $ProjectDir "requirements.txt"
+$Python = Join-Path $VenvDir "Scripts\python.exe"
+$ActivateScript = Join-Path $VenvDir "Scripts\Activate.ps1"
 $EnvFile = Join-Path $ProjectDir ".env"
 
-if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
-    Write-Error @"
-Ambiente virtuale non trovato: $ProjectDir\.venv
-Esegui una sola volta i passi di prima installazione nel README.
-"@
-    exit 1
+function Test-PythonVersion {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Executable,
+
+        [string[]] $Arguments = @()
+    )
+
+    try {
+        & $Executable @Arguments -c `
+            "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)" `
+            *> $null
+
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-SystemPython {
+    if (
+        (Get-Command "py" -ErrorAction SilentlyContinue) -and
+        (Test-PythonVersion -Executable "py" -Arguments @("-3.12"))
+    ) {
+        return @{
+            Executable  = "py"
+            Arguments   = @("-3.12")
+            Description = "py -3.12"
+        }
+    }
+
+    if (
+        (Get-Command "py" -ErrorAction SilentlyContinue) -and
+        (Test-PythonVersion -Executable "py" -Arguments @("-3"))
+    ) {
+        return @{
+            Executable  = "py"
+            Arguments   = @("-3")
+            Description = "py -3"
+        }
+    }
+
+    if (
+        (Get-Command "python" -ErrorAction SilentlyContinue) -and
+        (Test-PythonVersion -Executable "python")
+    ) {
+        return @{
+            Executable  = "python"
+            Arguments   = @()
+            Description = "python"
+        }
+    }
+
+    return $null
 }
 
 function Import-DotEnv {
@@ -54,7 +110,6 @@ function Import-DotEnv {
         $Name = $Line.Substring(0, $SeparatorIndex).Trim()
         $Value = $Line.Substring($SeparatorIndex + 1).Trim()
 
-        # Rimuove una coppia esterna di virgolette semplici o doppie.
         if (
             $Value.Length -ge 2 -and
             (
@@ -78,21 +133,76 @@ function Import-DotEnv {
     }
 }
 
+if (-not (Test-Path -LiteralPath $Requirements -PathType Leaf)) {
+    Write-Error "File requirements.txt non trovato: $Requirements"
+    exit 1
+}
+
+if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
+    Write-Host "Ambiente virtuale non trovato."
+    Write-Host "Creazione di: $VenvDir"
+
+    $SystemPython = Get-SystemPython
+
+    if ($null -eq $SystemPython) {
+        Write-Error @"
+Python 3.12 o successivo non trovato.
+Installa Python 3.12 e assicurati che py.exe o python.exe siano disponibili nel PATH.
+"@
+        exit 1
+    }
+
+    Write-Host "Interprete selezionato: $($SystemPython.Description)"
+
+    & $SystemPython.Executable `
+        @($SystemPython.Arguments) `
+        -m venv $VenvDir
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Creazione dell'ambiente virtuale non riuscita."
+        exit 1
+    }
+}
+
+if (-not (Test-Path -LiteralPath $ActivateScript -PathType Leaf)) {
+    Write-Error "Script di attivazione non trovato: $ActivateScript"
+    exit 1
+}
+
+# Attiva il virtual environment nel processo PowerShell corrente.
+& $ActivateScript
+
+Write-Host "Ambiente virtuale attivo: $env:VIRTUAL_ENV"
+& $Python --version
+
+Write-Host "Verifica delle dipendenze da requirements.txt..."
+
+& $Python -m pip install `
+    --disable-pip-version-check `
+    -r $Requirements
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Installazione delle dipendenze non riuscita."
+    exit 1
+}
+
 if (Test-Path -LiteralPath $EnvFile -PathType Leaf) {
+    Write-Host "Caricamento configurazione da .env"
     Import-DotEnv -Path $EnvFile
 }
 
 Push-Location $ProjectDir
 
 try {
+    Write-Host "Controllo configurazione Django..."
+
     & $Python manage.py check
 
     if ($LASTEXITCODE -ne 0) {
         exit $LASTEXITCODE
     }
 
-    # --check verifica la connessione e lo stato delle migrazioni,
-    # ma non applica e non modifica alcuna migrazione.
+    # Verifica connessione e migrazioni senza applicarle.
     & $Python manage.py migrate --check *> $null
     $MigrationCheckExitCode = $LASTEXITCODE
 
@@ -102,8 +212,8 @@ Impossibile usare il database configurato.
 Controlla POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD,
 POSTGRES_HOST e POSTGRES_PORT nel file .env.
 
-Se PostgreSQL non è avviato, avvialo.
-Se si tratta della prima installazione, segui il README.
+Lo script non applica migrazioni e non modifica il database.
+Per una prima installazione, segui il README.
 "@
         exit 1
     }
