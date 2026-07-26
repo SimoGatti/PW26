@@ -46,37 +46,76 @@ document.documentElement.classList.add("js");
         .closest("form")
         .querySelector(`[name="${holder.dataset.dateTarget}"]`);
       [
-        ["−G", "Indietro di un giorno", "date", -1],
-        ["+G", "Avanti di un giorno", "date", 1],
-        ["−M", "Indietro di un mese", "month", -1],
-        ["+M", "Avanti di un mese", "month", 1],
-        ["−A", "Indietro di un anno", "year", -1],
-        ["+A", "Avanti di un anno", "year", 1],
-      ].forEach(([text, label, unit, amount]) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "icon-button";
-        button.textContent = text;
-        button.title = label;
-        button.setAttribute("aria-label", label);
-        button.addEventListener("click", () => {
-          const value = input.value ? new Date(`${input.value}T12:00:00`) : new Date();
-          if (unit === "date") value.setDate(value.getDate() + amount);
-          if (unit === "month") value.setMonth(value.getMonth() + amount);
-          if (unit === "year") value.setFullYear(value.getFullYear() + amount);
-          input.value = [
-            value.getFullYear(),
-            String(value.getMonth() + 1).padStart(2, "0"),
-            String(value.getDate()).padStart(2, "0"),
-          ].join("-");
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-        });
-        holder.append(button);
+        ["Giorno", "date"],
+        ["Mese", "month"],
+        ["Anno", "year"],
+      ].forEach(([label, unit]) => {
+        const control = document.createElement("span");
+        control.className = "date-unit-control";
+        const caption = document.createElement("small");
+        caption.textContent = label;
+        const makeButton = (amount) => {
+          const direction = amount > 0 ? "Avanti" : "Indietro";
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "date-arrow";
+          button.title = `${direction} di un ${label.toLowerCase()}`;
+          button.setAttribute("aria-label", button.title);
+          const icon = document.createElement("span");
+          icon.className = `ui-icon ${amount > 0 ? "icon-up" : "icon-down"}`;
+          icon.setAttribute("aria-hidden", "true");
+          button.append(icon);
+          button.addEventListener("click", () => {
+            const value = input.value ? new Date(`${input.value}T12:00:00`) : new Date();
+            if (unit === "date") value.setDate(value.getDate() + amount);
+            if (unit === "month") value.setMonth(value.getMonth() + amount);
+            if (unit === "year") value.setFullYear(value.getFullYear() + amount);
+            input.value = [
+              value.getFullYear(),
+              String(value.getMonth() + 1).padStart(2, "0"),
+              String(value.getDate()).padStart(2, "0"),
+            ].join("-");
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+          return button;
+        };
+        control.append(makeButton(1), caption, makeButton(-1));
+        holder.append(control);
       });
     });
   }
 
+  function captureInterfaceState() {
+    const active = document.activeElement;
+    return {
+      leftScroll: document.querySelector(".left-panel .panel-body")?.scrollTop || 0,
+      centerScroll: document.querySelector(".center-panel .panel-body")?.scrollTop || 0,
+      activeName: active?.name || null,
+      selectionStart: typeof active?.selectionStart === "number" ? active.selectionStart : null,
+      selectionEnd: typeof active?.selectionEnd === "number" ? active.selectionEnd : null,
+    };
+  }
+
+  function restoreInterfaceState(state) {
+    const left = document.querySelector(".left-panel .panel-body");
+    const center = document.querySelector(".center-panel .panel-body");
+    if (left) left.scrollTop = state.leftScroll;
+    if (center) center.scrollTop = state.centerScroll;
+    if (state.activeName) {
+      const active = [...document.querySelectorAll("[name]")].find(
+        (element) => element.name === state.activeName
+      );
+      if (active) {
+        active.focus({ preventScroll: true });
+        if (state.selectionStart !== null && active.setSelectionRange) {
+          active.setSelectionRange(state.selectionStart, state.selectionEnd);
+        }
+      }
+    }
+  }
+
   async function updateListing(url, push = true) {
+    const interfaceState = captureInterfaceState();
     requestController?.abort();
     requestController = new AbortController();
     const center = document.querySelector(".center-panel");
@@ -102,6 +141,7 @@ document.documentElement.classList.add("js");
       document.title = next.title;
       if (push) history.pushState({}, "", url);
       enhance(document);
+      restoreInterfaceState(interfaceState);
       announce("Risultati aggiornati");
     } catch (error) {
       if (error.name !== "AbortError") window.location.assign(url);
@@ -131,10 +171,12 @@ document.documentElement.classList.add("js");
   document.addEventListener("input", (event) => {
     if (event.target.matches("[data-suggestions-url]")) {
       const input = event.target;
-      const datalist = document.getElementById(input.getAttribute("list"));
+      const results = document.getElementById(input.getAttribute("aria-controls"));
       window.clearTimeout(suggestionTimer);
       suggestionController?.abort();
-      datalist.replaceChildren();
+      results.replaceChildren();
+      results.hidden = true;
+      input.setAttribute("aria-expanded", "false");
       if (input.value.trim().length < 2) return;
       suggestionTimer = window.setTimeout(async () => {
         suggestionController = new AbortController();
@@ -145,13 +187,22 @@ document.documentElement.classList.add("js");
           if (!response.ok) return;
           const data = await response.json();
           data.items.forEach((item) => {
-            const option = document.createElement("option");
-            option.value = item.username;
-            option.label = `${item.nome} ${item.cognome}`;
-            datalist.append(option);
+            const option = document.createElement("button");
+            option.type = "button";
+            option.className = "user-suggestion";
+            option.setAttribute("role", "option");
+            option.dataset.username = item.username;
+            const username = document.createElement("strong");
+            username.textContent = item.username;
+            const name = document.createElement("small");
+            name.textContent = `${item.nome} ${item.cognome}`;
+            option.append(username, name);
+            results.append(option);
           });
+          results.hidden = data.items.length === 0;
+          input.setAttribute("aria-expanded", String(data.items.length > 0));
         } catch (error) {
-          if (error.name !== "AbortError") datalist.replaceChildren();
+          if (error.name !== "AbortError") results.replaceChildren();
         }
       }, 250);
       return;
@@ -174,6 +225,16 @@ document.documentElement.classList.add("js");
   });
 
   document.addEventListener("click", (event) => {
+    const suggestion = event.target.closest(".user-suggestion");
+    if (suggestion) {
+      const search = suggestion.closest(".user-search");
+      const input = search.querySelector("[data-suggestions-url]");
+      input.value = suggestion.dataset.username;
+      search.querySelector(".user-suggestions").hidden = true;
+      input.setAttribute("aria-expanded", "false");
+      input.focus();
+      return;
+    }
     const link = event.target.closest(listingSelector);
     if (link && link.origin === window.location.origin) {
       event.preventDefault();
@@ -186,6 +247,29 @@ document.documentElement.classList.add("js");
       const hidden = stack.classList.toggle("solutions-hidden");
       solutions.textContent = hidden ? "Mostra soluzioni" : "Nascondi soluzioni";
       solutions.setAttribute("aria-pressed", String(!hidden));
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const input = event.target.closest("[data-suggestions-url]");
+    if (!input) return;
+    const results = document.getElementById(input.getAttribute("aria-controls"));
+    const options = [...results.querySelectorAll(".user-suggestion")];
+    if (!options.length || results.hidden) return;
+    const current = options.findIndex((option) => option.classList.contains("active"));
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      options.forEach((option) => option.classList.remove("active"));
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      const next = current < 0 ? (direction > 0 ? 0 : options.length - 1) : (current + direction + options.length) % options.length;
+      options[next].classList.add("active");
+      options[next].scrollIntoView({ block: "nearest" });
+    } else if (event.key === "Enter" && current >= 0) {
+      event.preventDefault();
+      options[current].click();
+    } else if (event.key === "Escape") {
+      results.hidden = true;
+      input.setAttribute("aria-expanded", "false");
     }
   });
 

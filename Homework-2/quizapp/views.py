@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.db import IntegrityError
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from .forms import ParticipantForm, UserForm
 from .repositories import quizzes, participations, users
 from .repositories.common import list_state
@@ -72,7 +73,7 @@ def quiz_detail(request,code):
 def participation_detail(request,code):
     participation=participations.detail(code)
     if not participation:raise Http404
-    return render(request,"participations/detail.html",{"participation":participation})
+    return render(request,"participations/detail.html",{"participation":participation,"solutions_visible":request.GET.get("review")=="1"})
 
 def participate(request,code):
     quiz=quizzes.attempt_data(code)
@@ -90,7 +91,9 @@ def attempt(request):
     if not quiz:request.session.pop(quiz_attempt.SESSION_KEY,None);messages.error(request,"Il quiz non è più aperto.");return redirect("quiz-list")
     if request.method=="POST":
         quiz_attempt.save_choices(request.session,request.POST)
-        try: code=quiz_attempt.validate_and_submit(request.session,request.POST.get("attempt_token", ""));return redirect("participation-detail",code=code)
+        try:
+            code=quiz_attempt.validate_and_submit(request.session,request.POST.get("attempt_token", ""))
+            return redirect(f"{reverse('participation-detail', kwargs={'code': code})}?review=1")
         except ValueError as error:messages.error(request,str(error))
     selected=data.get("selected",{})
     for question in quiz["question_list"]:

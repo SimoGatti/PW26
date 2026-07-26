@@ -30,7 +30,7 @@
   </fieldset>
   <label>Per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label>
   <button class="button button-primary filter-submit">Applica</button>
-  <a class="button secondary" href="{% url 'participation-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+  <a class="button secondary" href="{% url 'participation-list' %}" data-live-link><span class="ui-icon icon-reset" aria-hidden="true"></span><span>Pulisci filtri</span></a>
 </form>
 {% endblock %}
 {% block content %}
@@ -40,7 +40,7 @@
 <div class="table-wrap"><table class="data-table">
   <thead><tr><th class="action-column"><span class="sr-only">Azioni</span></th>{% if view_mode == 'extended' %}<th class="numeric"><a href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}<th><a href="?{{ sort_urls.username }}">Utente</a></th><th><a href="?{{ sort_urls.quiz }}">Quiz</a></th>{% if view_mode == 'extended' %}<th><a href="?{{ sort_urls.date }}">Data</a></th>{% endif %}<th class="numeric"><a href="?{{ sort_urls.answers }}">Risposte</a></th><th class="numeric"><a href="?{{ sort_urls.score }}">Punteggio</a></th></tr></thead>
   <tbody>{% for item in items %}<tr>
-    <td class="action-column"><a class="icon-button" href="{% url 'participation-detail' item.codice %}" aria-label="Apri partecipazione {{ item.codice }}" title="Dettaglio">↗</a></td>
+    <td class="action-column"><a class="icon-button" href="{% url 'participation-detail' item.codice %}" aria-label="Apri partecipazione {{ item.codice }}" title="Dettaglio"><span class="ui-icon icon-external" aria-hidden="true"></span></a></td>
     {% if view_mode == 'extended' %}<td class="numeric"><a href="{% url 'participation-detail' item.codice %}">{{ item.codice }}</a></td>{% endif %}
     <td><a href="{% url 'user-detail' item.utente %}">{{ item.utente }}</a></td><td><a href="{% url 'quiz-detail' item.quiz %}">{{ item.titolo }}</a></td>
     {% if view_mode == 'extended' %}<td class="numeric">{{ item.data|date:"d/m/Y" }}</td>{% endif %}<td class="numeric">{{ item.answers }}</td><td class="numeric">{{ item.score }}</td>

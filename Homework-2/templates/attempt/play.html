@@ -8,7 +8,7 @@
   <div class="detail-hero"><div><p class="eyebrow">Partecipazione in corso</p><h1>{{ quiz.titolo }}</h1><p class="detail-subtitle">Seleziona una risposta con i cerchi; quando sono ammesse più risposte vedrai caselle quadrate.</p></div></div>
   <form method="post" class="attempt-form">{% csrf_token %}<input type="hidden" name="attempt_token" value="{{ attempt.token }}">
     <div class="question-stack">{% for question in quiz.question_list %}<fieldset class="attempt-question"><legend><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></legend><p class="question-hint">{% if question.multiple %}Puoi selezionare più risposte.{% else %}Seleziona una risposta.{% endif %}</p><div class="attempt-answers">{% for answer in question.answers %}<label><input type="{% if question.multiple %}checkbox{% else %}radio{% endif %}" name="q_{{ question.number }}" value="{{ answer.answer_number }}" {% if answer.answer_number in question.selected %}checked{% endif %}><span>{{ answer.answer_text }}</span></label>{% endfor %}</div></fieldset>{% endfor %}</div>
-    <div class="attempt-submit"><button class="button button-primary">Invia risposte <span aria-hidden="true">→</span></button></div>
+    <div class="attempt-submit"><button class="button button-primary">Invia risposte <span class="ui-icon icon-right" aria-hidden="true"></span></button></div>
   </form>
   <details class="abandon-panel"><summary>Vuoi interrompere?</summary><p>Abbandonando, la bozza viene eliminata e non sarà registrata alcuna partecipazione.</p><form method="post" action="{% url 'abandon' %}">{% csrf_token %}<button class="button danger">Abbandona quiz</button></form></details>
 </article>

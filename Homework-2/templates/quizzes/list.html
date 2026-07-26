@@ -53,7 +53,7 @@
     </select>
   </label>
   <button class="button button-primary filter-submit">Applica</button>
-  <a class="button secondary" href="{% url 'quiz-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+  <a class="button secondary" href="{% url 'quiz-list' %}" data-live-link><span class="ui-icon icon-reset" aria-hidden="true"></span><span>Pulisci filtri</span></a>
 </form>
 {% endblock %}
 {% block content %}
@@ -66,7 +66,7 @@
 <div class="table-wrap"><table class="data-table">
   <thead><tr><th class="action-column"><span class="sr-only">Azioni</span></th>{% if view_mode == 'extended' %}<th class="numeric"><a href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}<th><a href="?{{ sort_urls.title }}">Titolo</a></th><th><a href="?{{ sort_urls.creator }}">Creatore</a></th><th><a href="?{{ sort_urls.status }}">Stato</a></th><th class="numeric"><a href="?{{ sort_urls.questions }}">Domande</a></th>{% if view_mode == 'extended' %}<th><a href="?{{ sort_urls.start }}">Inizio</a></th><th><a href="?{{ sort_urls.end }}">Fine</a></th><th class="numeric"><a href="?{{ sort_urls.participations }}">Partecipazioni</a></th>{% endif %}</tr></thead>
   <tbody>{% for item in items %}<tr>
-    <td class="action-column">{% if item.status == 'open' %}<a class="icon-button play" href="{% url 'participate' item.codice %}" aria-label="Partecipa a {{ item.titolo }}" title="Partecipa">▶</a>{% else %}<a class="icon-button" href="{% url 'quiz-detail' item.codice %}" aria-label="Apri {{ item.titolo }}" title="Dettaglio">↗</a>{% endif %}</td>
+    <td class="action-column">{% if item.status == 'open' %}<a class="icon-button play" href="{% url 'participate' item.codice %}" aria-label="Partecipa a {{ item.titolo }}" title="Partecipa"><span class="ui-icon icon-play" aria-hidden="true"></span></a>{% else %}<a class="icon-button" href="{% url 'quiz-detail' item.codice %}" aria-label="Apri {{ item.titolo }}" title="Dettaglio"><span class="ui-icon icon-external" aria-hidden="true"></span></a>{% endif %}</td>
     {% if view_mode == 'extended' %}<td class="numeric">{{ item.codice }}</td>{% endif %}
     <td><a href="{% url 'quiz-detail' item.codice %}">{{ item.titolo }}</a></td><td><a href="{% url 'user-detail' item.creatore %}">{{ item.creatore }}</a></td>
     <td><span class="badge {{ item.status }}">{% if item.status == 'open' %}Aperto{% elif item.status == 'future' %}Futuro{% else %}Chiuso{% endif %}</span></td>

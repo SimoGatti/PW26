@@ -1,1 +1,28 @@
-{% extends 'base.html' %}{% block content %}<h1>{% if editing %}Modifica {{ username }}{% else %}Nuovo utente{% endif %}</h1><form method="post" class="card">{% csrf_token %}{% for field in form %}<p><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}</p>{% endfor %}<button>{% if editing %}Salva{% else %}Crea{% endif %}</button></form>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{% if editing %}Modifica {{ username }}{% else %}Nuovo utente{% endif %} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>{% if editing %}Modifica profilo{% else %}Nuovo profilo{% endif %}</h2>
+<p class="panel-copy">{% if editing %}Lo username è l’identificativo del profilo e non può essere modificato.{% else %}Inserisci i dati richiesti per creare un nuovo utente applicativo.{% endif %}</p>
+{% endblock %}
+{% block content %}
+<article class="start-card user-form-card">
+  <div class="start-icon" aria-hidden="true"><span class="ui-icon {% if editing %}icon-edit{% else %}icon-users{% endif %}"></span></div>
+  <p class="eyebrow">{% if editing %}Gestione utente{% else %}Nuovo profilo{% endif %}</p>
+  <h1>{% if editing %}Modifica {{ username }}{% else %}Crea un utente{% endif %}</h1>
+  <p class="detail-subtitle">{% if editing %}Aggiorna i dati del profilo mantenendo invariato lo username.{% else %}Compila i dati anagrafici e scegli uno username univoco.{% endif %}</p>
+  <form method="post" class="participant-form user-form">{% csrf_token %}
+    {% for field in form %}
+      <div class="form-field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+        {% for error in field.errors %}<small class="error">{{ error }}</small>{% endfor %}
+      </div>
+    {% endfor %}
+    <div class="form-actions">
+      <a class="button secondary" href="{% if editing %}{% url 'user-detail' username %}{% else %}{% url 'user-list' %}{% endif %}"><span class="ui-icon icon-left" aria-hidden="true"></span>Indietro</a>
+      <button class="button button-primary">{% if editing %}Salva modifiche{% else %}Crea utente{% endif %}<span class="ui-icon icon-right" aria-hidden="true"></span></button>
+    </div>
+  </form>
+</article>
+{% endblock %}

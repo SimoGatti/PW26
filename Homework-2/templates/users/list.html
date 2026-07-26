@@ -35,13 +35,13 @@
     </select>
   </label>
   <button class="button button-primary filter-submit">Applica</button>
-  <a class="button secondary" href="{% url 'user-list' %}" data-live-link>↺ <span>Pulisci filtri</span></a>
+  <a class="button secondary" href="{% url 'user-list' %}" data-live-link><span class="ui-icon icon-reset" aria-hidden="true"></span><span>Pulisci filtri</span></a>
 </form>
 {% endblock %}
 {% block content %}
 <div class="content-title">
   <div><p class="eyebrow">Ricerca</p><h1>Utenti</h1></div>
-  <a class="icon-button primary" href="{% url 'user-new' %}" aria-label="Nuovo utente" title="Nuovo utente">＋</a>
+  <a class="icon-button primary" href="{% url 'user-new' %}" aria-label="Nuovo utente" title="Nuovo utente"><span class="ui-icon icon-add" aria-hidden="true"></span></a>
 </div>
 <div class="results-toolbar">
   <div class="view-toggle" aria-label="Densità dati">

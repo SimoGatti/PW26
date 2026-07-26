@@ -13,17 +13,17 @@
 <article class="detail-page">
   <div class="detail-hero">
     <div><p class="eyebrow">Dettaglio quiz</p><h1>{{ quiz.titolo }}</h1><span class="badge {{ quiz.status }}">{% if quiz.status == 'open' %}Aperto{% elif quiz.status == 'future' %}Futuro{% else %}Chiuso{% endif %}</span></div>
-    {% if quiz.status == 'open' %}<a class="participate-cta" href="{% url 'participate' quiz.codice %}"><span aria-hidden="true">▶</span><span><strong>Partecipa</strong><small>Scegli l’utente e inizia</small></span></a>{% endif %}
+    {% if quiz.status == 'open' %}<a class="participate-cta" href="{% url 'participate' quiz.codice %}"><span aria-hidden="true"><span class="ui-icon icon-play"></span></span><span><strong>Partecipa</strong><small>Scegli l’utente e inizia</small></span></a>{% endif %}
   </div>
   <section class="content-section">
     <div class="section-heading"><div><p class="eyebrow">Contenuto</p><h2 class="content-heading">Domande</h2></div><button type="button" class="button secondary solutions-toggle" aria-pressed="false">Mostra soluzioni</button></div>
     <div class="question-stack solutions-hidden">
-      {% for question in quiz.question_list %}<details class="question-card"><summary><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></summary><ul class="answer-list">{% for answer in question.answers %}<li><span>{{ answer.answer_text }}</span><span class="solution">{% if answer.tipo == 'Corretta' %}Corretta · {{ answer.punteggio }} pt{% else %}Errata{% endif %}</span></li>{% endfor %}</ul></details>{% endfor %}
+      {% for question in quiz.question_list %}<details class="question-card"><summary><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></summary><ul class="answer-list">{% for answer in question.answers %}<li><span class="solution-indicator {% if answer.tipo == 'Corretta' %}correct{% else %}wrong{% endif %}" aria-label="{% if answer.tipo == 'Corretta' %}Risposta corretta{% else %}Risposta errata{% endif %}"><span class="ui-icon {% if answer.tipo == 'Corretta' %}icon-check{% else %}icon-x{% endif %}" aria-hidden="true"></span></span><span class="answer-text">{{ answer.answer_text }}</span></li>{% endfor %}</ul></details>{% endfor %}
     </div>
   </section>
   <section class="content-section">
     <p class="eyebrow">Attività</p><h2 class="content-heading">Partecipanti</h2>
-    <div class="link-list">{% for p in quiz.participation_list %}<a href="{% url 'participation-detail' p.codice %}"><span>{{ p.utente }}</span><small>{{ p.data|date:"d/m/Y" }}</small><span aria-hidden="true">↗</span></a>{% empty %}<p class="empty-state">Nessuna partecipazione.</p>{% endfor %}</div>
+    <div class="link-list">{% for p in quiz.participation_list %}<a href="{% url 'participation-detail' p.codice %}"><span>{{ p.utente }}</span><small>{{ p.data|date:"d/m/Y" }}</small><span class="ui-icon icon-external" aria-hidden="true"></span></a>{% empty %}<p class="empty-state">Nessuna partecipazione.</p>{% endfor %}</div>
   </section>
 </article>
 {% endblock %}

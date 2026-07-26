@@ -6,17 +6,19 @@
 {% endblock %}
 {% block content %}
 <article class="start-card">
-  <div class="start-icon" aria-hidden="true">▶</div>
+  <div class="start-icon" aria-hidden="true"><span class="ui-icon icon-play"></span></div>
   <p class="eyebrow">Nuova partecipazione</p>
   <h1>Partecipa a «{{ quiz.titolo }}»</h1>
   <p class="detail-subtitle">Scegli chi svolgerà il quiz. Le risposte saranno salvate soltanto all’invio finale.</p>
   <form method="post" class="participant-form card">{% csrf_token %}
     <label for="{{ form.username.id_for_label }}">Cerca utente</label>
-    <input id="{{ form.username.id_for_label }}" name="username" list="usernames" type="search" value="{{ form.username.value|default:'' }}" placeholder="Digita username, nome o cognome" autocomplete="off" data-suggestions-url="{% url 'user-suggestions' %}" required>
-    <datalist id="usernames"></datalist>
+    <div class="user-search">
+      <input id="{{ form.username.id_for_label }}" name="username" type="search" value="{{ form.username.value|default:'' }}" placeholder="Digita username, nome o cognome" autocomplete="off" data-suggestions-url="{% url 'user-suggestions' %}" aria-autocomplete="list" aria-controls="user-suggestions" aria-expanded="false" required>
+      <div id="user-suggestions" class="user-suggestions" role="listbox" aria-label="Risultati utenti" hidden></div>
+    </div>
     <small class="field-hint">Digita almeno due caratteri, poi scegli un risultato.</small>
     {% for error in form.username.errors %}<small class="error">{{ error }}</small>{% endfor %}
-    <div class="form-actions"><a class="button secondary" href="{% url 'quiz-detail' quiz.codice %}">← Indietro</a><button class="button button-primary">Inizia <span aria-hidden="true">→</span></button></div>
+    <div class="form-actions"><a class="button secondary" href="{% url 'quiz-detail' quiz.codice %}"><span class="ui-icon icon-left" aria-hidden="true"></span>Indietro</a><button class="button button-primary">Inizia <span class="ui-icon icon-right" aria-hidden="true"></span></button></div>
   </form>
 </article>
 {% endblock %}

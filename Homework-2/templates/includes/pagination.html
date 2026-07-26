@@ -1,23 +1,21 @@
-{% if pages > 1 %}
 <nav class="pagination pagination-{{ position|default:'bottom' }}" aria-label="Paginazione {{ position|default:'inferiore' }}">
   <span class="pagination-summary">Pagina {{ state.page }} di {{ pages }}</span>
   <div class="pagination-actions">
     {% if state.page > 1 %}
-      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'-1' }}" aria-label="Pagina precedente" title="Pagina precedente">←</a>
+      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'-1' }}" aria-label="Pagina precedente" title="Pagina precedente"><span class="ui-icon icon-left" aria-hidden="true"></span></a>
     {% else %}
-      <span class="icon-button disabled" aria-hidden="true">←</span>
+      <span class="icon-button disabled" aria-hidden="true"><span class="ui-icon icon-left"></span></span>
     {% endif %}
     {% if state.page < pages %}
-      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'1' }}" aria-label="Pagina successiva" title="Pagina successiva">→</a>
+      <a class="icon-button" href="?{{ state.query }}&page={{ state.page|add:'1' }}" aria-label="Pagina successiva" title="Pagina successiva"><span class="ui-icon icon-right" aria-hidden="true"></span></a>
     {% else %}
-      <span class="icon-button disabled" aria-hidden="true">→</span>
+      <span class="icon-button disabled" aria-hidden="true"><span class="ui-icon icon-right"></span></span>
     {% endif %}
     <form method="get" class="page-jump">
       {% for key,value in state.params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
       <label for="page-{{ position|default:'bottom' }}">Vai alla pagina</label>
       <input id="page-{{ position|default:'bottom' }}" type="number" name="page" min="1" max="{{ pages }}" value="{{ state.page }}" aria-label="Numero pagina">
-      <button class="icon-button" aria-label="Vai alla pagina indicata" title="Vai alla pagina">↵</button>
+      <button class="icon-button" aria-label="Vai alla pagina indicata" title="Vai alla pagina"><span class="ui-icon icon-enter" aria-hidden="true"></span></button>
     </form>
   </div>
 </nav>
-{% endif %}

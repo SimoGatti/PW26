@@ -12,7 +12,6 @@
 <body>
   <header class="surface-block">
     <a class="header-title" href="{% url 'home' %}">QUIZZING</a>
-    <span class="header-divider" aria-hidden="true"></span>
     <p class="header-subtitle">Metti alla prova le tue conoscenze</p>
   </header>
   <main class="app-shell">
@@ -27,10 +26,10 @@
     </section>
     <aside class="panel right-panel">
       <nav class="panel-body" aria-label="Navigazione principale">
-        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><span aria-hidden="true">⌂</span><span>Home</span></a>
-        <a class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user-list' %}"><span aria-hidden="true">♙</span><span>Utenti</span></a>
-        <a class="nav-item {% if 'quiz' in request.resolver_match.url_name or request.resolver_match.url_name == 'participate' or request.resolver_match.url_name == 'attempt' %}active{% endif %}" href="{% url 'quiz-list' %}"><span aria-hidden="true">◆</span><span>Quiz</span></a>
-        <a class="nav-item {% if 'participation' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'participation-list' %}"><span aria-hidden="true">▤</span><span>Partecipazioni</span></a>
+        <a class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><span class="ui-icon icon-home" aria-hidden="true"></span><span>Home</span></a>
+        <a class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'user-list' %}"><span class="ui-icon icon-users" aria-hidden="true"></span><span>Utenti</span></a>
+        <a class="nav-item {% if 'quiz' in request.resolver_match.url_name or request.resolver_match.url_name == 'participate' or request.resolver_match.url_name == 'attempt' %}active{% endif %}" href="{% url 'quiz-list' %}"><span class="ui-icon icon-quiz" aria-hidden="true"></span><span>Quiz</span></a>
+        <a class="nav-item {% if 'participation' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'participation-list' %}"><span class="ui-icon icon-participations" aria-hidden="true"></span><span>Partecipazioni</span></a>
       </nav>
     </aside>
   </main>
