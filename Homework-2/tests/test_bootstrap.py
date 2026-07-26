@@ -145,3 +145,12 @@ class InitialDatasetTests(TestCase):
                 "RispostaUtenteQuiz": 193788,
             },
         )
+
+
+class LauncherSafetyTests(TestCase):
+    def test_cmd_does_not_execute_shifted_percent_star(self):
+        source = (ROOT / "scripts" / "run-local.cmd").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn(":run_checked", source)
+        self.assertNotRegex(source, r"(?m)^\s*%\*\s*$")

@@ -31,11 +31,23 @@ if not exist "%PYTHON%" (
     )
 )
 
-call :run_checked "Verifica di Python 3.12 o successivo" "%PYTHON%" -c "import sys; print(sys.version); raise SystemExit(sys.version_info < (3, 12))"
-if errorlevel 1 exit /b %ERRORLEVEL%
+echo.
+echo ==^> Verifica di Python 3.12 o successivo
+"%PYTHON%" -c "import sys; print(sys.version); raise SystemExit(sys.version_info < (3, 12))"
+set "VERSION_EXIT_CODE=%ERRORLEVEL%"
+if not "%VERSION_EXIT_CODE%"=="0" (
+    echo ERRORE: verifica della versione Python non riuscita con codice %VERSION_EXIT_CODE%. 1>&2
+    exit /b %VERSION_EXIT_CODE%
+)
 
-call :run_checked "Installazione o allineamento delle dipendenze" "%PYTHON%" -m pip install --disable-pip-version-check -r "%REQUIREMENTS%"
-if errorlevel 1 exit /b %ERRORLEVEL%
+echo.
+echo ==^> Installazione o allineamento delle dipendenze
+"%PYTHON%" -m pip install --disable-pip-version-check -r "%REQUIREMENTS%"
+set "PIP_EXIT_CODE=%ERRORLEVEL%"
+if not "%PIP_EXIT_CODE%"=="0" (
+    echo ERRORE: installazione delle dipendenze non riuscita con codice %PIP_EXIT_CODE%. 1>&2
+    exit /b %PIP_EXIT_CODE%
+)
 
 "%PYTHON%" "%BOOTSTRAP%" --runserver %*
 set "EXIT_CODE=%ERRORLEVEL%"
@@ -44,19 +56,6 @@ if not "%EXIT_CODE%"=="0" (
     echo ERRORE: avvio di QUIZZING 2 interrotto con codice %EXIT_CODE%. 1>&2
 )
 exit /b %EXIT_CODE%
-
-:run_checked
-set "STEP=%~1"
-shift
-echo.
-echo ==^> %STEP%
-%*
-set "STEP_CODE=%ERRORLEVEL%"
-if not "%STEP_CODE%"=="0" (
-    echo ERRORE: %STEP% non riuscita con codice %STEP_CODE%. 1>&2
-    exit /b %STEP_CODE%
-)
-exit /b 0
 
 :find_python
 py -3.12 -c "import sys; raise SystemExit(sys.version_info < (3, 12))" >nul 2>&1

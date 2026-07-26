@@ -63,8 +63,23 @@
   <p class="results-count">{{ total }} risultati</p>
 </div>
 {% include 'includes/pagination.html' with position='top' %}
-<div class="table-wrap"><table class="data-table">
-  <thead><tr><th class="action-column"><span class="sr-only">Azioni</span></th>{% if view_mode == 'extended' %}<th class="numeric"><a href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}<th><a href="?{{ sort_urls.title }}">Titolo</a></th><th><a href="?{{ sort_urls.creator }}">Creatore</a></th><th><a href="?{{ sort_urls.status }}">Stato</a></th><th class="numeric"><a href="?{{ sort_urls.questions }}">Domande</a></th>{% if view_mode == 'extended' %}<th><a href="?{{ sort_urls.start }}">Inizio</a></th><th><a href="?{{ sort_urls.end }}">Fine</a></th><th class="numeric"><a href="?{{ sort_urls.participations }}">Partecipazioni</a></th>{% endif %}</tr></thead>
+<div class="table-wrap"><table class="data-table quizzes-table {{ view_mode }}">
+  <colgroup>
+    <col class="col-action">{% if view_mode == 'extended' %}<col class="col-code">{% endif %}<col class="col-title"><col class="col-creator"><col class="col-status"><col class="col-questions">{% if view_mode == 'extended' %}<col class="col-start"><col class="col-end"><col class="col-participations">{% endif %}
+  </colgroup>
+  <thead><tr>
+    <th class="action-column"><span class="sr-only">Azioni</span></th>
+    {% if view_mode == 'extended' %}<th class="numeric" aria-sort="{% if state.sort == 'code' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'code' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.code }}">Codice</a></th>{% endif %}
+    <th aria-sort="{% if state.sort == 'title' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'title' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.title }}">Titolo</a></th>
+    <th aria-sort="{% if state.sort == 'creator' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'creator' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.creator }}">Creatore</a></th>
+    <th aria-sort="{% if state.sort == 'status' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'status' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.status }}">Stato</a></th>
+    <th class="numeric" aria-sort="{% if state.sort == 'questions' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'questions' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.questions }}">Domande</a></th>
+    {% if view_mode == 'extended' %}
+      <th aria-sort="{% if state.sort == 'start' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'start' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.start }}">Inizio</a></th>
+      <th aria-sort="{% if state.sort == 'end' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'end' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.end }}">Fine</a></th>
+      <th class="numeric" aria-sort="{% if state.sort == 'participations' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'participations' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.participations }}">Partecipazioni</a></th>
+    {% endif %}
+  </tr></thead>
   <tbody>{% for item in items %}<tr>
     <td class="action-column">{% if item.status == 'open' %}<a class="icon-button play" href="{% url 'participate' item.codice %}" aria-label="Partecipa a {{ item.titolo }}" title="Partecipa"><span class="ui-icon icon-play" aria-hidden="true"></span></a>{% else %}<a class="icon-button" href="{% url 'quiz-detail' item.codice %}" aria-label="Apri {{ item.titolo }}" title="Dettaglio"><span class="ui-icon icon-external" aria-hidden="true"></span></a>{% endif %}</td>
     {% if view_mode == 'extended' %}<td class="numeric">{{ item.codice }}</td>{% endif %}

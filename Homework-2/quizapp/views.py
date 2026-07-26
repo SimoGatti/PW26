@@ -102,6 +102,19 @@ def attempt(request):
         question["selected"]=selected.get(str(question["number"]),[])
     return render(request,"attempt/play.html",{"quiz":quiz,"attempt":data})
 
+def abandon_confirm(request):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+    data = request.session.get(quiz_attempt.SESSION_KEY)
+    if not data:
+        return redirect("quiz-list")
+    quiz = quizzes.detail(data["quiz_code"])
+    return render(
+        request,
+        "attempt/abandon_confirm.html",
+        {"attempt": data, "quiz": quiz},
+    )
+
 def abandon(request):
     if request.method!="POST":return HttpResponseNotAllowed(["POST"])
     request.session.pop(quiz_attempt.SESSION_KEY,None);messages.info(request,"Bozza abbandonata.");return redirect("quiz-list")

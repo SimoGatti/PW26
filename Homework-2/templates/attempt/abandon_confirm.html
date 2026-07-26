@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Conferma abbandono · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Tentativo in corso</h2>
+<p class="participant-name">{{ attempt.username }}</p>
+<p class="panel-copy">La partecipazione non è ancora stata registrata.</p>
+{% endblock %}
+{% block content %}
+<article class="start-card confirm-page">
+  <div class="start-icon danger-icon" aria-hidden="true"><span class="ui-icon icon-trash"></span></div>
+  <p class="eyebrow">Conferma richiesta</p>
+  <h1>Abbandonare{% if quiz %} «{{ quiz.titolo }}»{% else %} il quiz{% endif %}?</h1>
+  <p class="detail-subtitle">Le risposte in bozza verranno eliminate e non sarà registrata alcuna partecipazione. Questa operazione non può essere annullata.</p>
+  <div class="form-actions confirm-page-actions">
+    <a class="button secondary" href="{% url 'attempt' %}"><span class="ui-icon icon-left" aria-hidden="true"></span>Continua il quiz</a>
+    <form method="post" action="{% url 'abandon' %}">{% csrf_token %}<button class="button danger"><span class="ui-icon icon-trash" aria-hidden="true"></span>Conferma abbandono</button></form>
+  </div>
+</article>
+{% endblock %}

@@ -5,6 +5,7 @@ document.documentElement.classList.add("js");
   let requestController;
   let suggestionTimer;
   let suggestionController;
+  let confirmOpener;
 
   const listingSelector =
     "[data-live-link], .pagination a, .data-table thead a";
@@ -112,6 +113,23 @@ document.documentElement.classList.add("js");
         }
       }
     }
+  }
+
+  function openConfirmation(trigger) {
+    const overlay = document.getElementById(trigger.dataset.confirmTarget);
+    if (!overlay) return false;
+    confirmOpener = trigger;
+    overlay.hidden = false;
+    document.body.classList.add("confirm-open");
+    overlay.querySelector("[data-confirm-close]")?.focus();
+    return true;
+  }
+
+  function closeConfirmation(overlay) {
+    overlay.hidden = true;
+    document.body.classList.remove("confirm-open");
+    confirmOpener?.focus();
+    confirmOpener = null;
   }
 
   async function updateListing(url, push = true) {
@@ -235,6 +253,20 @@ document.documentElement.classList.add("js");
       input.focus();
       return;
     }
+    const confirmationTrigger = event.target.closest("[data-confirm-target]");
+    if (confirmationTrigger && openConfirmation(confirmationTrigger)) {
+      event.preventDefault();
+      return;
+    }
+    const confirmationClose = event.target.closest("[data-confirm-close]");
+    if (confirmationClose) {
+      closeConfirmation(confirmationClose.closest(".confirm-overlay"));
+      return;
+    }
+    if (event.target.matches(".confirm-overlay")) {
+      closeConfirmation(event.target);
+      return;
+    }
     const link = event.target.closest(listingSelector);
     if (link && link.origin === window.location.origin) {
       event.preventDefault();
@@ -251,6 +283,30 @@ document.documentElement.classList.add("js");
   });
 
   document.addEventListener("keydown", (event) => {
+    const confirmation = document.querySelector(".confirm-overlay:not([hidden])");
+    if (confirmation) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeConfirmation(confirmation);
+        return;
+      }
+      if (event.key === "Tab") {
+        const focusable = [...confirmation.querySelectorAll("button, a, input")]
+          .filter((element) => !element.disabled && !element.hidden);
+        if (focusable.length) {
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
+      }
+      return;
+    }
     const input = event.target.closest("[data-suggestions-url]");
     if (!input) return;
     const results = document.getElementById(input.getAttribute("aria-controls"));

@@ -52,15 +52,19 @@
 </div>
 {% include 'includes/pagination.html' with position='top' %}
 <div class="table-wrap">
-  <table class="data-table">
+  <table class="data-table users-table {{ view_mode }}">
+    <colgroup>
+      <col class="col-username"><col class="col-name"><col class="col-surname">
+      {% if view_mode == 'extended' %}<col class="col-email"><col class="col-created"><col class="col-participations">{% endif %}
+    </colgroup>
     <thead><tr>
-      <th><a href="?{{ sort_urls.username }}">Username</a></th>
-      <th><a href="?{{ sort_urls.nome }}">Nome</a></th>
-      <th><a href="?{{ sort_urls.cognome }}">Cognome</a></th>
+      <th aria-sort="{% if state.sort == 'username' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'username' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.username }}">Username</a></th>
+      <th aria-sort="{% if state.sort == 'nome' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'nome' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.nome }}">Nome</a></th>
+      <th aria-sort="{% if state.sort == 'cognome' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'cognome' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.cognome }}">Cognome</a></th>
       {% if view_mode == 'extended' %}
         <th>Email</th>
-        <th class="numeric"><a href="?{{ sort_urls.created }}">Quiz creati</a></th>
-        <th class="numeric"><a href="?{{ sort_urls.participations }}">Partecipazioni</a></th>
+        <th class="numeric" aria-sort="{% if state.sort == 'created' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'created' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.created }}">Quiz creati</a></th>
+        <th class="numeric" aria-sort="{% if state.sort == 'participations' %}{% if state.direction == 'asc' %}ascending{% else %}descending{% endif %}{% else %}none{% endif %}"><a class="sort-link{% if state.sort == 'participations' %} sort-active sort-{{ state.direction }}{% endif %}" href="?{{ sort_urls.participations }}">Partecipazioni</a></th>
       {% endif %}
     </tr></thead>
     <tbody>{% for item in items %}<tr>
