@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 
 import psycopg
+from psycopg import sql
 
 TABLES = ("Utente", "Quiz", "Domanda", "Risposta", "Partecipazione", "RispostaUtenteQuiz")
 INSERT_HEADER_RE = re.compile(r"INSERT INTO `(?P<table>\w+)` \((?P<columns>[^)]*)\) VALUES\s*", re.DOTALL)
@@ -121,14 +122,34 @@ def connection_string():
         host=os.getenv("POSTGRES_HOST", "127.0.0.1"),
         port=os.getenv("POSTGRES_PORT", "5432"),
         database=os.getenv("POSTGRES_DB", "quizzing"),
-        user=os.getenv("POSTGRES_USER", "quizzing"),
+        user=os.getenv("POSTGRES_USER", "quizzing_app"),
         password=os.getenv("POSTGRES_PASSWORD", ""),
     )
+
+
+def assert_tables_empty(cursor):
+    """Impedisce qualsiasi importazione sopra dati applicativi esistenti."""
+    counts = {}
+    for table in TABLES:
+        cursor.execute(
+            sql.SQL("SELECT COUNT(*) FROM {}").format(sql.Identifier(table))
+        )
+        counts[table] = cursor.fetchone()[0]
+    populated = {table: count for table, count in counts.items() if count}
+    if populated:
+        details = ", ".join(
+            f"{table}={count}" for table, count in populated.items()
+        )
+        raise RuntimeError(
+            "Importazione annullata: sono presenti dati applicativi "
+            f"({details}). Nessuna riga e stata modificata."
+        )
 
 
 def import_dump(parsed):
     counts = {table: 0 for table in TABLES}
     with psycopg.connect(connection_string()) as connection, connection.cursor() as cursor:
+        assert_tables_empty(cursor)
         for table in TABLES:
             for source_columns, source_rows in parsed[table]:
                 columns = [column for column in source_columns if column != "Attivo"]
@@ -192,4 +213,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (OSError, ValueError, KeyError, RuntimeError, psycopg.Error) as exc:
+        print(f"ERRORE: {exc}", file=os.sys.stderr)
+        raise SystemExit(1)

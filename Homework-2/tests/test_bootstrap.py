@@ -20,6 +20,10 @@ bootstrap = load_module(
     "quizzing_bootstrap",
     ROOT / "scripts" / "bootstrap-local.py",
 )
+importer = load_module(
+    "quizzing_mysql_importer",
+    ROOT / "database" / "import_mysql_dump.py",
+)
 
 
 class EnvironmentBootstrapTests(TestCase):
@@ -120,3 +124,24 @@ class SchemaSafetyTests(TestCase):
         self.assertNotIn('CREATE ROLE {} LOGIN PASSWORD %s', source)
         self.assertNotIn('ALTER ROLE {} PASSWORD %s', source)
         self.assertIn("sql.Literal(values[\"POSTGRES_PASSWORD\"])", source)
+
+
+class InitialDatasetTests(TestCase):
+    def test_bundled_dump_is_complete(self):
+        dataset = ROOT / "database" / "data" / "quiz_mysql_expanded.sql"
+        parsed = importer.statements(dataset)
+        counts = {
+            table: sum(len(rows) for _, rows in parsed[table])
+            for table in importer.TABLES
+        }
+        self.assertEqual(
+            counts,
+            {
+                "Utente": 2500,
+                "Quiz": 516,
+                "Domanda": 10000,
+                "Risposta": 40000,
+                "Partecipazione": 10000,
+                "RispostaUtenteQuiz": 193788,
+            },
+        )

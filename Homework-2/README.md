@@ -3,8 +3,9 @@
 Ristrutturazione server-side del Progetto 1 basata su Python 3.12 o successivo, Django
 Templates, PostgreSQL, SQL esplicito e Bootstrap locale.
 
-`Homework-1` resta una sorgente di dati e un riferimento funzionale: gli
-entrypoint non lo modificano.
+`Homework-1` resta soltanto un riferimento funzionale: QUIZZING 2 include nel
+proprio albero sia lo schema sia il dataset iniziale e non dipende da file del
+primo progetto.
 
 ## Avvio rapido
 
@@ -90,7 +91,7 @@ Gli entrypoint ordinari non eseguono mai:
 - `DELETE`;
 - sostituzione o reimportazione di dati esistenti;
 - ricreazione di un database esistente;
-- seed su tabelle che contengono anche una sola riga.
+- importazione o seed su tabelle che contengono anche una sola riga.
 
 Se trova uno schema esistente incompatibile, il bootstrap si ferma e descrive
 le colonne mancanti. Non tenta una riparazione che possa compromettere i dati.
@@ -102,12 +103,12 @@ Le modifiche consentite, sempre mostrate prima e confermate dall'utente, sono:
 - concessione dei privilegi necessari al ruolo applicativo;
 - creazione di tabelle e indici mancanti;
 - applicazione delle migrazioni Django mancanti;
-- caricamento del dataset `quick` soltanto quando tutte le tabelle applicative
-  sono vuote.
+- importazione del dataset completo incluso nel progetto soltanto quando tutte
+  le tabelle applicative sono vuote.
 
-Il seed può essere rifiutato: l'applicazione può essere avviata con tabelle
-vuote. Se si rifiuta invece un'operazione essenziale, l'avvio si interrompe per
-evitare un'applicazione parzialmente inizializzata.
+L'importazione può essere rifiutata: l'applicazione può essere avviata con
+tabelle vuote. Se si rifiuta invece un'operazione essenziale, l'avvio si
+interrompe per evitare un'applicazione parzialmente inizializzata.
 
 ## Configurazione `.env`
 
@@ -220,44 +221,72 @@ PGPASSWORD="$POSTGRES_PASSWORD" psql \
 
 Il reset non elimina le tabelle interne di Django.
 
-## Seed sicuro
+## Dataset iniziale sicuro
 
-Il bootstrap propone il profilo `quick` soltanto se tutte e sei le tabelle
-applicative sono vuote.
+La fonte dati ufficiale è inclusa in:
 
-Anche l'esecuzione manuale è protetta:
-
-```bash
-python database/seed.py --profile quick
+```text
+database/data/quiz_mysql_expanded.sql
 ```
 
-Se esiste qualunque dato, `seed.py` termina prima di inserire righe e mostra i
-conteggi rilevati. Non usa più `TRUNCATE`.
+Contiene:
 
-Profilo di carico, solo su database applicativo completamente vuoto:
-
-```bash
-python database/seed.py --profile load --seed 42
+```text
+2500 utenti
+516 quiz
+10000 domande
+40000 risposte
+10000 partecipazioni
+193788 risposte degli utenti
 ```
 
-Le date sono relative al giorno di esecuzione, salvo indicazione esplicita:
+Il bootstrap usa `database/import_mysql_dump.py` per leggere esclusivamente gli
+`INSERT` del dump. Le istruzioni MySQL `DROP TABLE` e `CREATE TABLE` presenti
+nel file non vengono eseguite.
+
+L'importatore aggiunge inoltre quiz aperti e futuri con date relative al giorno
+di installazione, senza modificare i quiz storici del dump.
+
+L'importazione viene proposta soltanto se tutte e sei le tabelle applicative
+sono vuote. Anche l'esecuzione manuale è protetta:
 
 ```bash
-python database/seed.py \
-  --profile quick \
-  --reference-date 2026-07-22 \
-  --seed 42
+python database/import_mysql_dump.py \
+  database/data/quiz_mysql_expanded.sql
+```
+
+Se esiste qualunque dato, l'importatore termina prima di inserire righe e
+mostra i conteggi rilevati. L'intera importazione usa una transazione: un errore
+intermedio annulla tutti gli inserimenti di quel tentativo.
+
+Per validare il dump senza collegarsi a PostgreSQL:
+
+```bash
+python database/import_mysql_dump.py \
+  database/data/quiz_mysql_expanded.sql \
+  --dry-run
+```
+
+`database/seed.py` resta disponibile come generatore sintetico alternativo per
+test specifici, ma non è più usato automaticamente dagli entrypoint. Anche
+questo comando rifiuta di lavorare su tabelle non vuote:
+
+```bash
+python database/seed.py --profile quick --seed 42
 ```
 
 ## Opzioni degli entrypoint
 
 Le opzioni aggiuntive vengono inoltrate a `bootstrap-local.py`.
 
-Saltare la proposta di seed:
+Saltare la proposta di importazione:
 
 ```bash
-./scripts/run-local.sh --no-seed
+./scripts/run-local.sh --no-data
 ```
+
+`--no-seed` rimane accettato come alias per compatibilità con le versioni
+precedenti degli script.
 
 Confermare automaticamente le sole operazioni additive:
 
@@ -345,7 +374,7 @@ Non eseguire reset, seed o import per risolvere un errore di connessione.
   arresta senza modificare dati; serve una migrazione progettata per quello
   specifico stato.
 
-`Seed annullato: sono presenti dati applicativi`
+`Importazione annullata: sono presenti dati applicativi`
 
 : È il comportamento previsto. I dati esistenti sono stati preservati.
 

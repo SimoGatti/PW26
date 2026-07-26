@@ -28,7 +28,10 @@ from psycopg import sql
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_DIR / ".env"
 INIT_SCHEMA = PROJECT_DIR / "database" / "init_schema.sql"
-SEED_SCRIPT = PROJECT_DIR / "database" / "seed.py"
+IMPORT_SCRIPT = PROJECT_DIR / "database" / "import_mysql_dump.py"
+INITIAL_DATASET = (
+    PROJECT_DIR / "database" / "data" / "quiz_mysql_expanded.sql"
+)
 MANAGE = PROJECT_DIR / "manage.py"
 
 EXPECTED_COLUMNS = {
@@ -528,16 +531,24 @@ def initialize_application(
 
     counts = domain_counts(connection)
     total_rows = sum(counts.values())
-    if total_rows == 0 and not args.no_seed:
-        should_seed = confirmed(
-            "Le tabelle applicative sono vuote. Caricare il dataset quick?",
+    if total_rows == 0 and not args.no_data:
+        should_import = confirmed(
+            "Le tabelle applicative sono vuote. "
+            "Importare il dataset completo iniziale?",
             args.yes,
         )
-        if should_seed:
-            run_python_script(SEED_SCRIPT, ["--profile", "quick"])
+        if should_import:
+            if not INITIAL_DATASET.is_file():
+                raise BootstrapError(
+                    f"Dataset iniziale non trovato: {INITIAL_DATASET}"
+                )
+            run_python_script(
+                IMPORT_SCRIPT,
+                [str(INITIAL_DATASET)],
+            )
     elif total_rows:
         print(
-            "Dati applicativi esistenti rilevati; seed ignorato: "
+            "Dati applicativi esistenti rilevati; importazione ignorata: "
             + ", ".join(f"{table}={count}" for table, count in counts.items())
         )
 
@@ -550,9 +561,16 @@ def parse_args() -> argparse.Namespace:
         help="conferma le sole operazioni additive proposte",
     )
     parser.add_argument(
-        "--no-seed",
+        "--no-data",
+        dest="no_data",
         action="store_true",
-        help="non propone il dataset quick anche se le tabelle sono vuote",
+        help="non propone il dataset iniziale anche se le tabelle sono vuote",
+    )
+    parser.add_argument(
+        "--no-seed",
+        dest="no_data",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--check-only",
