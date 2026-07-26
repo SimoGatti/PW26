@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""Utility storica per rigenerare il dump durante lo sviluppo.
+
+Lo script non viene importato dall'applicazione e non viene eseguito dal
+bootstrap. L'uso manuale richiede facoltativamente il pacchetto OpenAI e
+credenziali proprie; installazione e verifica di QUIZZING non lo richiedono.
+"""
+
 import os
 import json
 import random
@@ -34,7 +41,7 @@ CATEGORIE_AI = [
 random.seed(42)
 
 # ==============================================================================
-# HELPER FUNCTIONS
+# FUNZIONI DI SUPPORTO
 # ==============================================================================
 def esc(val):
     if val is None:

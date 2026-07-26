@@ -161,9 +161,9 @@ fieldset { min-width: 0; }
 .results-count { margin: 0; color: var(--muted); font-size: .8rem; font-variant-numeric: tabular-nums; }
 
 .table-wrap { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 11px; }
-.data-table { width: 100%; min-width: 610px; table-layout: fixed; border-collapse: collapse; background: #fff; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.data-table { width: 100%; min-width: 650px; table-layout: fixed; border-collapse: collapse; background: #fff; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .data-table th { padding: 9px 11px; overflow: hidden; border-bottom: 2px solid var(--border); background: var(--surface-tint); color: var(--muted); font-size: .68rem; letter-spacing: .045em; line-height: 1.2; text-align: left; text-transform: uppercase; vertical-align: middle; white-space: normal; }
-.data-table th a { display: inline-flex; align-items: center; gap: 5px; width: 100%; min-width: 0; max-width: 100%; overflow-wrap: anywhere; color: inherit; text-decoration: none; }
+.data-table th a { display: inline-flex; align-items: center; gap: 5px; width: 100%; min-width: 0; max-width: 100%; overflow-wrap: normal; color: inherit; text-decoration: none; white-space: nowrap; }
 .data-table th.numeric .sort-link { justify-content: flex-end; width: 100%; }
 .sort-link::after { content: ""; flex: 0 0 auto; width: 1rem; height: 1rem; background: #8b9da7; opacity: .72; -webkit-mask: url("../assets/icons/sort.svg") center / contain no-repeat; mask: url("../assets/icons/sort.svg") center / contain no-repeat; }
 .sort-link.sort-active { color: var(--accent-dark); font-weight: 900; }
@@ -181,40 +181,42 @@ fieldset { min-width: 0; }
 .users-table.compact .col-username { width: 38%; }
 .users-table.compact .col-name { width: 31%; }
 .users-table.compact .col-surname { width: 31%; }
-.users-table.extended { min-width: 840px; }
+.users-table.extended { min-width: 1040px; }
 .users-table.extended .col-username { width: 20%; }
 .users-table.extended .col-name { width: 14%; }
 .users-table.extended .col-surname { width: 14%; }
-.users-table.extended .col-email { width: 28%; }
-.users-table.extended .col-created,
-.users-table.extended .col-participations { width: 12%; }
+.users-table.extended .col-email { width: 26%; }
+.users-table.extended .col-created { width: 12%; }
+.users-table.extended .col-participations { width: 14%; }
 
+.quizzes-table.compact { min-width: 720px; }
 .quizzes-table.compact .col-action { width: 7%; }
-.quizzes-table.compact .col-title { width: 33%; }
+.quizzes-table.compact .col-title { width: 32%; }
 .quizzes-table.compact .col-creator { width: 27%; }
-.quizzes-table.compact .col-status { width: 18%; }
-.quizzes-table.compact .col-questions { width: 15%; }
-.quizzes-table.extended { min-width: 980px; }
+.quizzes-table.compact .col-status { width: 16%; }
+.quizzes-table.compact .col-questions { width: 18%; }
+.quizzes-table.extended { min-width: 1200px; }
 .quizzes-table.extended .col-action { width: 5%; }
-.quizzes-table.extended .col-code { width: 7%; }
-.quizzes-table.extended .col-title { width: 20%; }
-.quizzes-table.extended .col-creator { width: 17%; }
+.quizzes-table.extended .col-code { width: 8%; }
+.quizzes-table.extended .col-title { width: 17%; }
+.quizzes-table.extended .col-creator { width: 15%; }
 .quizzes-table.extended .col-status { width: 10%; }
-.quizzes-table.extended .col-questions { width: 9%; }
+.quizzes-table.extended .col-questions { width: 10%; }
 .quizzes-table.extended .col-start,
 .quizzes-table.extended .col-end { width: 10%; }
-.quizzes-table.extended .col-participations { width: 12%; }
+.quizzes-table.extended .col-participations { width: 15%; }
 
+.participations-table.compact { min-width: 780px; }
 .participations-table.compact .col-action { width: 7%; }
-.participations-table.compact .col-user { width: 25%; }
-.participations-table.compact .col-quiz { width: 38%; }
+.participations-table.compact .col-user { width: 24%; }
+.participations-table.compact .col-quiz { width: 35%; }
 .participations-table.compact .col-answers,
-.participations-table.compact .col-score { width: 15%; }
-.participations-table.extended { min-width: 820px; }
+.participations-table.compact .col-score { width: 17%; }
+.participations-table.extended { min-width: 1000px; }
 .participations-table.extended .col-action { width: 5%; }
-.participations-table.extended .col-code { width: 8%; }
+.participations-table.extended .col-code { width: 9%; }
 .participations-table.extended .col-user { width: 18%; }
-.participations-table.extended .col-quiz { width: 25%; }
+.participations-table.extended .col-quiz { width: 24%; }
 .participations-table.extended .col-date { width: 14%; }
 .participations-table.extended .col-answers,
 .participations-table.extended .col-score { width: 15%; }
@@ -414,7 +416,7 @@ footer strong { color: var(--text); font-size: .68rem; }
   .detail-hero { flex-direction: column; }
   .abandon-trigger { width: 100%; }
   .participate-cta { width: 100%; }
-  .data-table { min-width: 560px; }
+  .data-table { min-width: 650px; }
   .pagination { align-items: flex-end; flex-direction: column; gap: 5px; }
   .pagination-summary { align-self: flex-end; }
   footer span { display: none; }

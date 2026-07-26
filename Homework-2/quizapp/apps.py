@@ -1,3 +1,5 @@
+"""Configurazione dell'app Django QUIZZING."""
+
 from django.apps import AppConfig
 
 

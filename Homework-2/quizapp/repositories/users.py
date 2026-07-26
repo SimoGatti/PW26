@@ -1,3 +1,5 @@
+"""Query SQL relative a utenti, relazioni e anteprima di cancellazione."""
+
 from django.db import connection
 from .common import one, rows
 
@@ -12,6 +14,7 @@ def get(username):
         c.execute('SELECT "nomeUtente", nome, cognome, email FROM "Utente" WHERE "nomeUtente"=%s', [username]); return one(c)
 
 def username_suggestions(query, limit=12):
+    """Cerca username e nomi dando priorità agli username con lo stesso prefisso."""
     with connection.cursor() as c:
         c.execute(
             '''
@@ -28,6 +31,7 @@ def username_suggestions(query, limit=12):
         return rows(c)
 
 def search(filters, state):
+    """Applica filtri testuali e aggregati alla lista utenti paginata."""
     clauses, params = [], []
     for field, column in [("username", 'u."nomeUtente"'), ("nome", "u.nome"), ("cognome", "u.cognome"), ("email", "u.email")]:
         if filters.get(field): clauses.append(f"{column} ILIKE %s"); params.append(f"%{filters[field]}%")
@@ -44,7 +48,7 @@ def search(filters, state):
     return result, total
 
 def bounds():
-    """Return the real aggregate limits used by the numeric search controls."""
+    """Restituisce gli estremi reali usati dai controlli numerici."""
     with connection.cursor() as c:
         c.execute(
             '''
@@ -68,6 +72,7 @@ def bounds():
         return one(c)
 
 def detail(username):
+    """Carica il profilo con quiz creati e partecipazioni effettuate."""
     user = get(username)
     if not user: return None
     with connection.cursor() as c:
@@ -82,6 +87,7 @@ def update(username, data):
     with connection.cursor() as c: c.execute('UPDATE "Utente" SET nome=%s, cognome=%s, email=%s WHERE "nomeUtente"=%s', [data["nome"], data["cognome"], data["email"], username])
 
 def deletion_preview(username):
+    """Conta le dipendenze e segnala il vincolo che blocca l'eliminazione."""
     with connection.cursor() as c:
         c.execute('SELECT count(*) FROM "Partecipazione" WHERE utente=%s', [username]); participations=c.fetchone()[0]
         c.execute('SELECT count(*) FROM "Quiz" WHERE creatore=%s', [username]); quizzes=c.fetchone()[0]

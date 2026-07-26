@@ -8,7 +8,6 @@ tabella applicativa contiene righe, termina prima di inserire qualsiasi dato.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import random
 from datetime import date, datetime, timedelta
@@ -17,9 +16,14 @@ from pathlib import Path
 import psycopg
 from psycopg import sql
 
+try:
+    from .import_mysql_dump import split_values, statements
+except ImportError:  # Esecuzione diretta: ``python database/seed.py``.
+    from import_mysql_dump import split_values, statements
+
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT.parent / "Homework-1" / "data" / "database_quiz_ITA.json"
+SOURCE = ROOT / "database" / "data" / "quiz_mysql_expanded.sql"
 TABLES = (
     "Utente",
     "Quiz",
@@ -34,7 +38,38 @@ PROFILES = {
 }
 
 
+def load_question_source() -> list[dict[str, object]]:
+    """Ricostruisce un corpus di domande dal dump incluso in Homework-2."""
+    parsed = statements(SOURCE)
+    questions: dict[tuple[int, int], dict[str, object]] = {}
+
+    for columns, source_rows in parsed["Domanda"]:
+        for source_row in source_rows:
+            item = dict(zip(columns, split_values(source_row)))
+            questions[(item["quiz"], item["numero"])] = {
+                "domanda": item["testo"],
+                "risposta_corretta": None,
+                "risposte_errate": [],
+            }
+
+    for columns, source_rows in parsed["Risposta"]:
+        for source_row in source_rows:
+            item = dict(zip(columns, split_values(source_row)))
+            question = questions[(item["quiz"], item["domanda"])]
+            if item["tipo"] == "Corretta" and question["risposta_corretta"] is None:
+                question["risposta_corretta"] = item["testo"]
+            elif item["tipo"] == "Sbagliata":
+                question["risposte_errate"].append(item["testo"])
+
+    return [
+        question
+        for question in questions.values()
+        if question["risposta_corretta"] and len(question["risposte_errate"]) >= 3
+    ]
+
+
 def connection_kwargs() -> dict[str, str]:
+    """Restituisce la configurazione PostgreSQL letta dall'ambiente."""
     return {
         "host": os.getenv("POSTGRES_HOST", "127.0.0.1"),
         "port": os.getenv("POSTGRES_PORT", "5432"),
@@ -45,6 +80,7 @@ def connection_kwargs() -> dict[str, str]:
 
 
 def assert_tables_empty(cursor: psycopg.Cursor) -> None:
+    """Interrompe il seed prima di qualsiasi scrittura se esistono dati."""
     counts: dict[str, int] = {}
     for table in TABLES:
         cursor.execute(
@@ -64,13 +100,13 @@ def assert_tables_empty(cursor: psycopg.Cursor) -> None:
 
 
 def seed(profile: str, reference_date: date, random_seed: int) -> None:
+    """Genera il profilo richiesto dentro un'unica transazione psycopg."""
     if not SOURCE.is_file():
         raise FileNotFoundError(f"Sorgente dati non trovata: {SOURCE}")
 
     rng = random.Random(random_seed)
     user_count, quiz_count, participation_count = PROFILES[profile]
-    with SOURCE.open(encoding="utf-8") as source_file:
-        source = json.load(source_file)
+    source = load_question_source()
 
     with psycopg.connect(**connection_kwargs()) as connection:
         with connection.cursor() as cursor:
@@ -195,6 +231,7 @@ def seed(profile: str, reference_date: date, random_seed: int) -> None:
 
 
 def main() -> None:
+    """Legge le opzioni CLI e avvia il profilo sintetico selezionato."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=PROFILES, default="quick")
     parser.add_argument("--reference-date", default=date.today().isoformat())

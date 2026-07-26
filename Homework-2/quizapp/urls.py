@@ -1,3 +1,5 @@
+"""URL pubblici dell'applicazione, organizzati per risorsa e flusso."""
+
 from django.urls import path
 from . import views
 urlpatterns=[

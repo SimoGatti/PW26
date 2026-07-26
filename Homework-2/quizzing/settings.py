@@ -1,3 +1,5 @@
+"""Configurazione Django locale guidata dalle variabili del file ``.env``."""
+
 from pathlib import Path
 import os
 

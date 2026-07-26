@@ -1,8 +1,11 @@
+"""Query SQL per ricerca, dettaglio e disponibilità dei quiz."""
+
 from datetime import date
 from django.db import connection
 from .common import one, rows
 
 def search(filters, state):
+    """Cerca quiz senza caricare dataset completi e mantiene count e dati coerenti."""
     clauses, params = [], []
     for field, column in [("code", "q.codice::text"), ("title", "q.titolo"), ("creator", "q.creatore")]:
         if filters.get(field): clauses.append(f"{column} ILIKE %s"); params.append(f"%{filters[field]}%")
@@ -49,6 +52,7 @@ def search(filters, state):
     return result,total
 
 def bounds():
+    """Calcola gli estremi reali per domande e partecipazioni."""
     with connection.cursor() as c:
         c.execute(
             '''
@@ -72,10 +76,12 @@ def bounds():
         return one(c)
 
 def status_for(start, end):
+    """Deriva lo stato del quiz rispetto alla data locale corrente."""
     today=date.today()
     return "future" if start > today else "closed" if end < today else "open"
 
 def detail(code):
+    """Carica metadati, risposte e partecipazioni del quiz richiesto."""
     with connection.cursor() as c:
         c.execute('SELECT q.codice, q.creatore, q.titolo, q."dataInizio" AS start_date, q."dataFine" AS end_date, COUNT(DISTINCT d.numero) AS questions, COUNT(DISTINCT p.codice) AS participations FROM "Quiz" q LEFT JOIN "Domanda" d ON d.quiz=q.codice LEFT JOIN "Partecipazione" p ON p.quiz=q.codice WHERE q.codice=%s GROUP BY q.codice,q.creatore,q.titolo,q."dataInizio",q."dataFine"',[code]); quiz=one(c)
         if not quiz:return None
@@ -87,6 +93,7 @@ def detail(code):
     return quiz
 
 def attempt_data(code):
+    """Espone i dati di svolgimento soltanto quando il quiz è aperto."""
     quiz=detail(code)
     if not quiz or quiz["status"] != "open": return None
     return quiz

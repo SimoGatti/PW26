@@ -1,8 +1,11 @@
+"""Query SQL per ricerca e riepilogo delle partecipazioni concluse."""
+
 from datetime import date
 from django.db import connection
 from .common import one, rows
 
 def search(filters,state):
+    """Applica filtri, punteggio derivato e paginazione lato database."""
     clauses,params=[],[]
     for f,col in [("code","p.codice::text"),("username","p.utente"),("quiz","q.titolo")]:
         if filters.get(f): clauses.append(f"{col} ILIKE %s");params.append(f"%{filters[f]}%")
@@ -37,6 +40,7 @@ def search(filters,state):
     return result,total
 
 def bounds():
+    """Calcola gli estremi effettivi di risposte e punteggio."""
     score = "COALESCE(SUM(CASE WHEN r.tipo='Corretta' THEN r.punteggio ELSE 0 END),0)"
     with connection.cursor() as c:
         c.execute(
@@ -64,6 +68,7 @@ def bounds():
         return one(c)
 
 def detail(code):
+    """Ricostruisce domande, selezioni e punteggio della partecipazione."""
     with connection.cursor() as c:
         c.execute('SELECT p.codice,p.utente,p.quiz,p.data,q.titolo,q."dataInizio" AS start_date,q."dataFine" AS end_date FROM "Partecipazione" p JOIN "Quiz" q ON q.codice=p.quiz WHERE p.codice=%s',[code]); participation=one(c)
         if not participation:return None

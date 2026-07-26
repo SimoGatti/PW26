@@ -1,3 +1,5 @@
+"""Regole transazionali del tentativo conservato prima in sessione."""
+
 import secrets
 from datetime import date
 from django.db import connection, transaction
@@ -5,6 +7,7 @@ from django.db import connection, transaction
 SESSION_KEY="quiz_attempt"
 
 def start(session, quiz, username):
+    """Crea token e ordine casuale stabile senza scrivere dati applicativi."""
     ordered={str(q["number"]): [a["answer_number"] for a in q["answers"] for _ in [0]] for q in quiz["question_list"]}
     for values in ordered.values():
         secrets.SystemRandom().shuffle(values)
@@ -12,6 +15,7 @@ def start(session, quiz, username):
     session.modified=True
 
 def save_choices(session, post):
+    """Salva nella bozza solo valori numerici associati alle domande."""
     attempt=session.get(SESSION_KEY)
     if not attempt: return None
     selected={}
@@ -21,6 +25,7 @@ def save_choices(session, post):
     return attempt
 
 def validate_and_submit(session, token):
+    """Valida nuovamente il tentativo e persiste tutto in una transazione."""
     attempt=session.get(SESSION_KEY)
     if not attempt or not secrets.compare_digest(attempt["token"], token): raise ValueError("Tentativo non valido o già inviato.")
     quiz_code, username=attempt["quiz_code"],attempt["username"]
