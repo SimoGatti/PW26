@@ -244,7 +244,12 @@ Eseguire quindi il reset:
 
 ```cmd
 set "PGPASSWORD=%POSTGRES_PASSWORD%"
-psql -h "%POSTGRES_HOST%" -p "%POSTGRES_PORT%" -U "%POSTGRES_USER%" -d "%POSTGRES_DB%" -f database/reset_schema.sql
+psql ^
+  -h "%POSTGRES_HOST%" ^
+  -p "%POSTGRES_PORT%" ^
+  -U "%POSTGRES_USER%" ^
+  -d "%POSTGRES_DB%" ^
+  -f database/reset_schema.sql
 set "PGPASSWORD="
 ```
 
