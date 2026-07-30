@@ -9,6 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".trycloudflare.com"]
+# Cloudflare Tunnel termina HTTPS e inoltra localmente via HTTP. Django deve
+# riconoscere l'origine HTTPS per i controlli CSRF delle richieste POST.
+CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com"]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
     "django.contrib.admin", "django.contrib.auth", "django.contrib.contenttypes",
