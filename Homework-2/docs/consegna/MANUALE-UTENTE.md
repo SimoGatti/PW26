@@ -39,11 +39,11 @@ Premere un username per aprire il profilo. Il dettaglio mostra i quiz creati e
 le partecipazioni effettuate.
 
 Premere il titolo di un quiz per consultare periodo, stato, domande e
-partecipanti. Premere **Mostra soluzioni** per visualizzare risposte corrette e
-errate. Premere **Nascondi soluzioni** per nasconderle.
+partecipanti. Premere il **pulsante con l'occhio** per visualizzare risposte corrette e
+errate. Premere oò **pulsante con l'occhio** per nasconderle.
 
 Premere l'icona di apertura di una partecipazione per consultare punteggio e
-risposte. Aprire una domanda alla volta. Usare **Mostra soluzioni** per
+risposte. Aprire una domanda alla volta. Usare il **pulsante con l'occhio** per
 confrontare le risposte date con le soluzioni.
 
 ## 4. Svolgere un quiz
