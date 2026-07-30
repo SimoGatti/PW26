@@ -9,6 +9,7 @@
 {% endblock %}
 {% block content %}
 <article class="detail-page">
+  <div class="detail-back-row"><a class="button secondary" href="{% url 'user-list' %}" data-history-back><span class="ui-icon icon-left" aria-hidden="true"></span>Indietro</a></div>
   <div class="detail-hero">
     <div><p class="eyebrow">Dettaglio utente</p><h1>{{ user.nomeUtente }}</h1></div>
     <div class="icon-actions">

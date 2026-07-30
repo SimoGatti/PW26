@@ -9,7 +9,7 @@
   <label>Creatore<input class="form-control" name="creator" type="search" value="{{ filters.creator }}" autocomplete="off"></label>
   <label>Stato
     <select class="form-select" name="status">
-      <option value="">Tutti</option>
+      <option value="all" {% if filters.status == 'all' %}selected{% endif %}>Tutti</option>
       <option value="future" {% if filters.status == 'future' %}selected{% endif %}>Futuro</option>
       <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Aperto</option>
       <option value="closed" {% if filters.status == 'closed' %}selected{% endif %}>Chiuso</option>

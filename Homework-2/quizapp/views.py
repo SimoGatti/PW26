@@ -49,6 +49,8 @@ def listing(request, kind):
         for key, value in request.GET.items()
         if key not in {"page", "size", "sort", "dir", "mode"}
     }
+    if kind == "quizzes" and "status" not in request.GET:
+        filters["status"] = "open"
 
     view_mode = request.GET.get("mode", "compact")
     if view_mode not in {"compact", "extended"}:

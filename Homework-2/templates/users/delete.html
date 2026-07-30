@@ -1,1 +1,40 @@
-{% extends 'base.html' %}{% block content %}<h1>Elimina {{ username }}</h1><p>Partecipazioni proprie: {{ preview.participations }}. Quiz creati: {{ preview.quizzes }}.</p>{% if preview.allowed %}<p>Verranno eliminate esplicitamente le dipendenze consentite. L’operazione è irreversibile.</p><form method="post">{% csrf_token %}<button class="danger">Conferma eliminazione</button> <a href="{% url 'user-detail' username %}">Annulla</a></form>{% else %}<p class="error">Operazione bloccata: {{ preview.blocking }} partecipazioni appartengono a quiz creati da questo utente.</p><a href="{% url 'user-detail' username %}">Torna al dettaglio</a>{% endif %}{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Elimina {{ username }} · QUIZZING{% endblock %}
+{% block sidebar %}
+<h2>Eliminazione utente</h2>
+<p class="participant-name">{{ username }}</p>
+<p class="panel-copy">Controlla le dipendenze prima di confermare l’operazione.</p>
+{% endblock %}
+{% block content %}
+<article class="delete-confirm-page">
+  <div class="detail-back-row"><a class="button secondary" href="{% url 'user-detail' username %}" data-history-back><span class="ui-icon icon-left" aria-hidden="true"></span>Indietro</a></div>
+  <section class="delete-confirm-card">
+    <div class="confirm-icon" aria-hidden="true"><span class="ui-icon icon-trash"></span></div>
+    <p class="eyebrow">Operazione definitiva</p>
+    <h1>Eliminare {{ username }}?</h1>
+    <p class="delete-intro">L’utente e tutte le dipendenze eliminabili verranno rimossi definitivamente.</p>
+
+    <div class="deletion-summary" aria-label="Dipendenze dell’utente">
+      <div><span class="ui-icon icon-participations" aria-hidden="true"></span><strong>{{ preview.participations }}</strong><span>Partecipazioni</span></div>
+      <div><span class="ui-icon icon-quiz" aria-hidden="true"></span><strong>{{ preview.quizzes }}</strong><span>Quiz creati</span></div>
+    </div>
+
+    {% if preview.allowed %}
+      <div class="deletion-notice">
+        <span class="ui-icon icon-trash" aria-hidden="true"></span>
+        <p><strong>La cancellazione è consentita.</strong> Quiz, domande, risposte e partecipazioni collegate saranno rimossi nell’ordine previsto.</p>
+      </div>
+      <div class="delete-actions">
+        <a class="button secondary" href="{% url 'user-detail' username %}"><span class="ui-icon icon-left" aria-hidden="true"></span>Annulla</a>
+        <form method="post">{% csrf_token %}<button class="button danger"><span class="ui-icon icon-trash" aria-hidden="true"></span>Elimina definitivamente</button></form>
+      </div>
+    {% else %}
+      <div class="deletion-notice blocked">
+        <span class="ui-icon icon-x" aria-hidden="true"></span>
+        <p><strong>Eliminazione bloccata.</strong> {{ preview.blocking }} partecipazioni appartengono a quiz creati da questo utente e devono essere conservate.</p>
+      </div>
+      <div class="delete-actions"><a class="button secondary" href="{% url 'user-detail' username %}"><span class="ui-icon icon-left" aria-hidden="true"></span>Torna al dettaglio</a></div>
+    {% endif %}
+  </section>
+</article>
+{% endblock %}

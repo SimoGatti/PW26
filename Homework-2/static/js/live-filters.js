@@ -267,6 +267,15 @@ document.documentElement.classList.add("js");
   });
 
   document.addEventListener("click", (event) => {
+    const backLink = event.target.closest("[data-history-back]");
+    if (backLink && document.referrer) {
+      const previous = new URL(document.referrer);
+      if (previous.origin === window.location.origin) {
+        event.preventDefault();
+        history.back();
+        return;
+      }
+    }
     const suggestion = event.target.closest(".user-suggestion");
     if (suggestion) {
       const search = suggestion.closest(".user-search");
