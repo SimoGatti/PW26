@@ -13,7 +13,7 @@
   <form method="post" class="participant-form card">{% csrf_token %}
     <label for="{{ form.username.id_for_label }}">Cerca utente</label>
     <div class="user-search">
-      <input id="{{ form.username.id_for_label }}" name="username" type="search" value="{{ form.username.value|default:'' }}" placeholder="Digita username, nome o cognome" autocomplete="off" data-suggestions-url="{% url 'user-suggestions' %}" aria-autocomplete="list" aria-controls="user-suggestions" aria-expanded="false" required>
+      <input class="form-control" id="{{ form.username.id_for_label }}" name="username" type="search" value="{{ form.username.value|default:'' }}" placeholder="Digita username, nome o cognome" autocomplete="off" data-suggestions-url="{% url 'user-suggestions' %}" aria-autocomplete="list" aria-controls="user-suggestions" aria-expanded="false" required>
       <div id="user-suggestions" class="user-suggestions" role="listbox" aria-label="Risultati utenti" hidden></div>
     </div>
     <small class="field-hint">Digita almeno due caratteri, poi scegli un risultato.</small>

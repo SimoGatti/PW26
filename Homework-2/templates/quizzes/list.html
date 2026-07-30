@@ -4,11 +4,11 @@
 <h2>Filtri quiz</h2>
 <form method="get" class="filters live-filters">
   <input type="hidden" name="mode" value="{{ view_mode }}">
-  {% if view_mode == 'extended' %}<label>Codice<input name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
-  <label>Titolo<input name="title" type="search" value="{{ filters.title }}" autocomplete="off"></label>
-  <label>Creatore<input name="creator" type="search" value="{{ filters.creator }}" autocomplete="off"></label>
+  {% if view_mode == 'extended' %}<label>Codice<input class="form-control" name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
+  <label>Titolo<input class="form-control" name="title" type="search" value="{{ filters.title }}" autocomplete="off"></label>
+  <label>Creatore<input class="form-control" name="creator" type="search" value="{{ filters.creator }}" autocomplete="off"></label>
   <label>Stato
-    <select name="status">
+    <select class="form-select" name="status">
       <option value="">Tutti</option>
       <option value="future" {% if filters.status == 'future' %}selected{% endif %}>Futuro</option>
       <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Aperto</option>
@@ -18,37 +18,37 @@
   <fieldset class="range-filter">
     <legend>Domande</legend>
     <div class="range-inputs">
-      <label>Min<input name="questions_min" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_min|default:bounds.questions_min }}"><output>{{ filters.questions_min|default:bounds.questions_min }}</output></label>
-      <label>Max<input name="questions_max" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_max|default:bounds.questions_max }}"><output>{{ filters.questions_max|default:bounds.questions_max }}</output></label>
+      <label>Min<input class="form-range" name="questions_min" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_min|default:bounds.questions_min }}"><output>{{ filters.questions_min|default:bounds.questions_min }}</output></label>
+      <label>Max<input class="form-range" name="questions_max" type="range" min="{{ bounds.questions_min }}" max="{{ bounds.questions_max }}" value="{{ filters.questions_max|default:bounds.questions_max }}"><output>{{ filters.questions_max|default:bounds.questions_max }}</output></label>
     </div>
     <small>{{ bounds.questions_min }}–{{ bounds.questions_max }}</small>
   </fieldset>
   {% if view_mode == 'extended' %}
     <fieldset class="date-filter">
       <legend>Data inizio</legend>
-      <label>Da<input name="start_from" type="date" value="{{ filters.start_from }}"></label>
+      <label>Da<input class="form-control" name="start_from" type="date" value="{{ filters.start_from }}"></label>
       <div class="date-steppers" data-date-target="start_from"></div>
-      <label>A<input name="start_to" type="date" value="{{ filters.start_to }}"></label>
+      <label>A<input class="form-control" name="start_to" type="date" value="{{ filters.start_to }}"></label>
       <div class="date-steppers" data-date-target="start_to"></div>
     </fieldset>
     <fieldset class="date-filter">
       <legend>Data fine</legend>
-      <label>Da<input name="end_from" type="date" value="{{ filters.end_from }}"></label>
+      <label>Da<input class="form-control" name="end_from" type="date" value="{{ filters.end_from }}"></label>
       <div class="date-steppers" data-date-target="end_from"></div>
-      <label>A<input name="end_to" type="date" value="{{ filters.end_to }}"></label>
+      <label>A<input class="form-control" name="end_to" type="date" value="{{ filters.end_to }}"></label>
       <div class="date-steppers" data-date-target="end_to"></div>
     </fieldset>
     <fieldset class="range-filter">
       <legend>Partecipazioni</legend>
       <div class="range-inputs">
-        <label>Min<input name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
-        <label>Max<input name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
+        <label>Min<input class="form-range" name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
+        <label>Max<input class="form-range" name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
       </div>
       <small>{{ bounds.participations_min }}–{{ bounds.participations_max }}</small>
     </fieldset>
   {% endif %}
   <label>Per pagina
-    <select name="size">
+    <select class="form-select" name="size">
       <option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option>
     </select>
   </label>
@@ -64,6 +64,7 @@
 </div>
 {% include 'includes/pagination.html' with position='top' %}
 <div class="table-wrap"><table class="data-table quizzes-table {{ view_mode }}">
+  {# Il colgroup mantiene ferme le colonne quando cambiano risultati e ordinamento. #}
   <colgroup>
     <col class="col-action">{% if view_mode == 'extended' %}<col class="col-code">{% endif %}<col class="col-title"><col class="col-creator"><col class="col-status"><col class="col-questions">{% if view_mode == 'extended' %}<col class="col-start"><col class="col-end"><col class="col-participations">{% endif %}
   </colgroup>

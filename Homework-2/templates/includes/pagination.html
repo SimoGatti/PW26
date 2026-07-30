@@ -14,7 +14,7 @@
     <form method="get" class="page-jump">
       {% for key,value in state.params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
       <label for="page-{{ position|default:'bottom' }}">Vai alla pagina</label>
-      <input id="page-{{ position|default:'bottom' }}" type="number" name="page" min="1" max="{{ pages }}" value="{{ state.page }}" aria-label="Numero pagina">
+      <input class="form-control" id="page-{{ position|default:'bottom' }}" type="number" name="page" min="1" max="{{ pages }}" value="{{ state.page }}" aria-label="Numero pagina">
       <button class="icon-button" aria-label="Vai alla pagina indicata" title="Vai alla pagina"><span class="ui-icon icon-enter" aria-hidden="true"></span></button>
     </form>
   </div>

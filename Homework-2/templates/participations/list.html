@@ -4,31 +4,31 @@
 <h2>Filtri partecipazioni</h2>
 <form method="get" class="filters live-filters">
   <input type="hidden" name="mode" value="{{ view_mode }}">
-  {% if view_mode == 'extended' %}<label>Codice<input name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
-  <label>Utente<input name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
-  <label>Quiz<input name="quiz" type="search" value="{{ filters.quiz }}" autocomplete="off"></label>
+  {% if view_mode == 'extended' %}<label>Codice<input class="form-control" name="code" type="search" inputmode="numeric" value="{{ filters.code }}"></label>{% endif %}
+  <label>Utente<input class="form-control" name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
+  <label>Quiz<input class="form-control" name="quiz" type="search" value="{{ filters.quiz }}" autocomplete="off"></label>
   {% if view_mode == 'extended' %}
     <fieldset class="date-filter">
       <legend>Data</legend>
-      <label>Da<input name="date_from" type="date" value="{{ filters.date_from }}"></label><div class="date-steppers" data-date-target="date_from"></div>
-      <label>A<input name="date_to" type="date" value="{{ filters.date_to }}"></label><div class="date-steppers" data-date-target="date_to"></div>
+      <label>Da<input class="form-control" name="date_from" type="date" value="{{ filters.date_from }}"></label><div class="date-steppers" data-date-target="date_from"></div>
+      <label>A<input class="form-control" name="date_to" type="date" value="{{ filters.date_to }}"></label><div class="date-steppers" data-date-target="date_to"></div>
     </fieldset>
   {% endif %}
   <fieldset class="range-filter">
     <legend>Risposte</legend>
     <div class="range-inputs">
-      <label>Min<input name="answers_min" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_min|default:bounds.answers_min }}"><output>{{ filters.answers_min|default:bounds.answers_min }}</output></label>
-      <label>Max<input name="answers_max" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_max|default:bounds.answers_max }}"><output>{{ filters.answers_max|default:bounds.answers_max }}</output></label>
+      <label>Min<input class="form-range" name="answers_min" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_min|default:bounds.answers_min }}"><output>{{ filters.answers_min|default:bounds.answers_min }}</output></label>
+      <label>Max<input class="form-range" name="answers_max" type="range" min="{{ bounds.answers_min }}" max="{{ bounds.answers_max }}" value="{{ filters.answers_max|default:bounds.answers_max }}"><output>{{ filters.answers_max|default:bounds.answers_max }}</output></label>
     </div><small>{{ bounds.answers_min }}–{{ bounds.answers_max }}</small>
   </fieldset>
   <fieldset class="range-filter">
     <legend>Punteggio</legend>
     <div class="range-inputs">
-      <label>Min<input name="score_min" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_min|default:bounds.score_min }}"><output>{{ filters.score_min|default:bounds.score_min }}</output></label>
-      <label>Max<input name="score_max" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_max|default:bounds.score_max }}"><output>{{ filters.score_max|default:bounds.score_max }}</output></label>
+      <label>Min<input class="form-range" name="score_min" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_min|default:bounds.score_min }}"><output>{{ filters.score_min|default:bounds.score_min }}</output></label>
+      <label>Max<input class="form-range" name="score_max" type="range" min="{{ bounds.score_min }}" max="{{ bounds.score_max }}" value="{{ filters.score_max|default:bounds.score_max }}"><output>{{ filters.score_max|default:bounds.score_max }}</output></label>
     </div><small>{{ bounds.score_min }}–{{ bounds.score_max }}</small>
   </fieldset>
-  <label>Per pagina<select name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label>
+  <label>Per pagina<select class="form-select" name="size"><option value="10" {% if state.size == 10 %}selected{% endif %}>10</option><option value="25" {% if state.size == 25 %}selected{% endif %}>25</option><option value="50" {% if state.size == 50 %}selected{% endif %}>50</option><option value="100" {% if state.size == 100 %}selected{% endif %}>100</option></select></label>
   <button class="button button-primary filter-submit">Applica</button>
   <a class="button secondary" href="{% url 'participation-list' %}" data-live-link><span class="ui-icon icon-reset" aria-hidden="true"></span><span>Pulisci filtri</span></a>
 </form>
@@ -38,6 +38,7 @@
 <div class="results-toolbar"><div class="view-toggle" aria-label="Densità dati"><a class="view-toggle-btn {% if view_mode == 'compact' %}active{% endif %}" href="?{{ compact_query }}" data-live-link>Compatta</a><a class="view-toggle-btn {% if view_mode == 'extended' %}active{% endif %}" href="?{{ extended_query }}" data-live-link>Estesa</a></div><p class="results-count">{{ total }} risultati</p></div>
 {% include 'includes/pagination.html' with position='top' %}
 <div class="table-wrap"><table class="data-table participations-table {{ view_mode }}">
+  {# Il layout fisso evita spostamenti tra filtri, pagine e ordinamenti. #}
   <colgroup>
     <col class="col-action">{% if view_mode == 'extended' %}<col class="col-code">{% endif %}<col class="col-user"><col class="col-quiz">{% if view_mode == 'extended' %}<col class="col-date">{% endif %}<col class="col-answers"><col class="col-score">
   </colgroup>

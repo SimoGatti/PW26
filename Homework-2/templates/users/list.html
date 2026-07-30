@@ -4,30 +4,30 @@
 <h2>Filtri utenti</h2>
 <form method="get" class="filters live-filters">
   <input type="hidden" name="mode" value="{{ view_mode }}">
-  <label>Username<input name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
-  <label>Nome<input name="nome" type="search" value="{{ filters.nome }}" autocomplete="off"></label>
-  <label>Cognome<input name="cognome" type="search" value="{{ filters.cognome }}" autocomplete="off"></label>
+  <label>Username<input class="form-control" name="username" type="search" value="{{ filters.username }}" autocomplete="off"></label>
+  <label>Nome<input class="form-control" name="nome" type="search" value="{{ filters.nome }}" autocomplete="off"></label>
+  <label>Cognome<input class="form-control" name="cognome" type="search" value="{{ filters.cognome }}" autocomplete="off"></label>
   {% if view_mode == 'extended' %}
-    <label>Email<input name="email" type="search" value="{{ filters.email }}" autocomplete="off"></label>
+    <label>Email<input class="form-control" name="email" type="search" value="{{ filters.email }}" autocomplete="off"></label>
     <fieldset class="range-filter">
       <legend>Quiz creati</legend>
       <div class="range-inputs">
-        <label>Min<input name="created_min" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_min|default:bounds.created_min }}"><output>{{ filters.created_min|default:bounds.created_min }}</output></label>
-        <label>Max<input name="created_max" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_max|default:bounds.created_max }}"><output>{{ filters.created_max|default:bounds.created_max }}</output></label>
+        <label>Min<input class="form-range" name="created_min" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_min|default:bounds.created_min }}"><output>{{ filters.created_min|default:bounds.created_min }}</output></label>
+        <label>Max<input class="form-range" name="created_max" type="range" min="{{ bounds.created_min }}" max="{{ bounds.created_max }}" value="{{ filters.created_max|default:bounds.created_max }}"><output>{{ filters.created_max|default:bounds.created_max }}</output></label>
       </div>
       <small>{{ bounds.created_min }}–{{ bounds.created_max }}</small>
     </fieldset>
     <fieldset class="range-filter">
       <legend>Partecipazioni</legend>
       <div class="range-inputs">
-        <label>Min<input name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
-        <label>Max<input name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
+        <label>Min<input class="form-range" name="participations_min" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_min|default:bounds.participations_min }}"><output>{{ filters.participations_min|default:bounds.participations_min }}</output></label>
+        <label>Max<input class="form-range" name="participations_max" type="range" min="{{ bounds.participations_min }}" max="{{ bounds.participations_max }}" value="{{ filters.participations_max|default:bounds.participations_max }}"><output>{{ filters.participations_max|default:bounds.participations_max }}</output></label>
       </div>
       <small>{{ bounds.participations_min }}–{{ bounds.participations_max }}</small>
     </fieldset>
   {% endif %}
   <label>Per pagina
-    <select name="size">
+    <select class="form-select" name="size">
       <option value="10" {% if state.size == 10 %}selected{% endif %}>10</option>
       <option value="25" {% if state.size == 25 %}selected{% endif %}>25</option>
       <option value="50" {% if state.size == 50 %}selected{% endif %}>50</option>
@@ -53,6 +53,7 @@
 {% include 'includes/pagination.html' with position='top' %}
 <div class="table-wrap">
   <table class="data-table users-table {{ view_mode }}">
+    {# Le larghezze dipendono dalla modalità, non dai valori della pagina corrente. #}
     <colgroup>
       <col class="col-username"><col class="col-name"><col class="col-surname">
       {% if view_mode == 'extended' %}<col class="col-email"><col class="col-created"><col class="col-participations">{% endif %}
