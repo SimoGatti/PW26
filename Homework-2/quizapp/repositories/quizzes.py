@@ -3,6 +3,7 @@
 from datetime import date
 from django.db import connection
 from .common import one, rows
+from .participations import quiz_statistics
 
 def search(filters, state):
     """Cerca quiz senza caricare dataset completi e mantiene count e dati coerenti."""
@@ -90,6 +91,7 @@ def detail(code):
         if not quiz:return None
         c.execute('SELECT d.numero AS question_number,d.testo AS question_text,r.numero AS answer_number,r.testo AS answer_text,r.tipo,r.punteggio FROM "Domanda" d JOIN "Risposta" r ON r.quiz=d.quiz AND r.domanda=d.numero WHERE d.quiz=%s ORDER BY d.numero,r.numero',[code]); answer_rows=rows(c)
         c.execute('SELECT p.codice,p.utente,p.data FROM "Partecipazione" p WHERE p.quiz=%s ORDER BY p.codice DESC',[code]); quiz["participation_list"]=rows(c)
+    quiz["quiz_stats"], quiz["top_participants"] = quiz_statistics(code)
     grouped={}
     for item in answer_rows: grouped.setdefault(item["question_number"], {"number":item["question_number"],"text":item["question_text"],"answers":[]})["answers"].append(item)
     quiz["question_list"]=list(grouped.values()); quiz["status"]=status_for(quiz["start_date"],quiz["end_date"])

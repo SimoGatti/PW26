@@ -8,9 +8,30 @@
   <div><dt>Domande</dt><dd>{{ quiz.questions }}</dd></div>
   <div><dt>Partecipazioni</dt><dd>{{ quiz.participations }}</dd></div>
 </dl>
+<h2 class="sidebar-section-title">Statistiche del quiz</h2>
+<dl class="metadata-list compact-metadata">
+  <div><dt>Partecipazioni</dt><dd class="numeric">{{ quiz.quiz_stats.attempts }}</dd></div>
+  <div><dt>Punteggio medio</dt><dd class="numeric">{{ quiz.quiz_stats.average_score|floatformat:"-1" }}</dd></div>
+  <div><dt>Miglior punteggio</dt><dd class="numeric">{{ quiz.quiz_stats.best_score }}</dd></div>
+</dl>
+{% if quiz.top_participants %}
+  <h2 class="sidebar-section-title">Migliori partecipanti</h2>
+  <ol class="ranking-list">
+    {% for ranked in quiz.top_participants %}
+      <li>
+        <a href="{% url 'participation-detail' ranked.codice %}">
+          <span class="ranking-position">{{ forloop.counter }}</span>
+          <span class="ranking-name">{{ ranked.username }}</span>
+          <strong class="ranking-score">{{ ranked.score }} pt</strong>
+        </a>
+      </li>
+    {% endfor %}
+  </ol>
+{% endif %}
 {% endblock %}
 {% block content %}
 <article class="detail-page">
+  <div class="detail-back-row"><a class="button secondary" href="{% url 'quiz-list' %}" data-history-back><span class="ui-icon icon-left" aria-hidden="true"></span>Indietro</a></div>
   <div class="detail-hero">
     <div><p class="eyebrow">Dettaglio quiz</p><h1>{{ quiz.titolo }}</h1><span class="badge {{ quiz.status }}">{% if quiz.status == 'open' %}Aperto{% elif quiz.status == 'future' %}Futuro{% else %}Chiuso{% endif %}</span></div>
     {% if quiz.status == 'open' %}<a class="participate-cta" href="{% url 'participate' quiz.codice %}"><span aria-hidden="true"><span class="ui-icon icon-play"></span></span><span><strong>Partecipa</strong><small>Scegli l’utente e inizia</small></span></a>{% endif %}

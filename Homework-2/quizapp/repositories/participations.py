@@ -4,6 +4,67 @@ from datetime import date
 from django.db import connection
 from .common import one, rows
 
+
+ATTEMPT_SCORES_SQL = '''
+    SELECT
+        p.codice,
+        p.utente AS username,
+        p.data,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN r.tipo = 'Corretta' THEN r.punteggio
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS score
+    FROM "Partecipazione" p
+    LEFT JOIN "RispostaUtenteQuiz" ruq
+        ON ruq.partecipazione = p.codice
+    LEFT JOIN "Risposta" r
+        ON (r.quiz, r.domanda, r.numero) =
+           (ruq.quiz, ruq.domanda, ruq.risposta)
+    WHERE p.quiz = %s
+    GROUP BY p.codice, p.utente, p.data
+'''
+
+
+def quiz_statistics(quiz_code):
+    """Calcola riepilogo e migliori partecipanti di uno stesso quiz."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f'''
+            SELECT
+                COUNT(*) AS attempts,
+                COALESCE(ROUND(AVG(score), 1), 0) AS average_score,
+                COALESCE(MAX(score), 0) AS best_score
+            FROM ({ATTEMPT_SCORES_SQL}) quiz_attempts
+            ''',
+            [quiz_code],
+        )
+        summary = one(cursor)
+        cursor.execute(
+            f'''
+            WITH attempt_scores AS ({ATTEMPT_SCORES_SQL}),
+            participant_bests AS (
+                SELECT DISTINCT ON (username)
+                    codice,
+                    username,
+                    score
+                FROM attempt_scores
+                ORDER BY username, score DESC, data DESC, codice DESC
+            )
+            SELECT codice, username, score
+            FROM participant_bests
+            ORDER BY score DESC, username ASC
+            LIMIT 3
+            ''',
+            [quiz_code],
+        )
+        return summary, rows(cursor)
+
+
 def search(filters,state):
     """Applica filtri, punteggio derivato e paginazione lato database."""
     clauses,params=[],[]
@@ -76,12 +137,21 @@ def detail(code):
         c.execute('SELECT p.codice,p.utente,p.quiz,p.data,q.titolo,q."dataInizio" AS start_date,q."dataFine" AS end_date FROM "Partecipazione" p JOIN "Quiz" q ON q.codice=p.quiz WHERE p.codice=%s',[code]); participation=one(c)
         if not participation:return None
         c.execute('SELECT d.numero AS question_number,d.testo AS question_text,r.numero AS answer_number,r.testo AS answer_text,r.tipo,r.punteggio, (ruq.risposta IS NOT NULL) AS selected FROM "Domanda" d JOIN "Risposta" r ON (r.quiz,r.domanda)=(d.quiz,d.numero) LEFT JOIN "RispostaUtenteQuiz" ruq ON (ruq.partecipazione,ruq.quiz,ruq.domanda,ruq.risposta)=(%s,r.quiz,r.domanda,r.numero) WHERE d.quiz=%s ORDER BY d.numero,r.numero',[code,participation["quiz"]]); data=rows(c)
-    grouped={};score=0
+    participation["quiz_stats"], participation["top_participants"] = (
+        quiz_statistics(participation["quiz"])
+    )
+    grouped={};score=0;max_score=0
     for answer in data:
         q=grouped.setdefault(answer["question_number"],{"number":answer["question_number"],"text":answer["question_text"],"answers":[]})
         q["answers"].append(answer)
-        if answer["selected"] and answer["tipo"]=="Corretta":score+=answer["punteggio"]
+        if answer["tipo"]=="Corretta":
+            max_score+=answer["punteggio"]
+            if answer["selected"]:score+=answer["punteggio"]
+    for question in grouped.values():
+        selected = {a["answer_number"] for a in question["answers"] if a["selected"]}
+        correct = {a["answer_number"] for a in question["answers"] if a["tipo"]=="Corretta"}
+        question["is_correct"] = selected == correct
     today = date.today()
     participation["quiz_status"] = "future" if participation["start_date"] > today else "closed" if participation["end_date"] < today else "open"
-    participation["questions"]=list(grouped.values());participation["score"]=score
+    participation["questions"]=list(grouped.values());participation["score"]=score;participation["max_score"]=max_score
     return participation
