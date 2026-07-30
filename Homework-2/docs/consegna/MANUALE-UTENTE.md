@@ -3,8 +3,7 @@
 ## Manuale per l'utente
 
 QUIZZING permette di consultare utenti, quiz e partecipazioni. Un quiz aperto
-può essere svolto scegliendo un'identità applicativa. Non serve creare un
-account e non esiste un accesso con password.
+può essere svolto scegliendo l'utente.
 
 ## 1. Aprire l'applicazione
 
@@ -24,7 +23,7 @@ La navigazione contiene quattro voci:
 
 1. Aprire Utenti, Quiz oppure Partecipazioni.
 2. Inserire uno o più valori nel pannello Filtri.
-3. Attendere l'aggiornamento dei risultati oppure premere Invio.
+3. Attendere l'aggiornamento dei risultati.
 4. Premere **Pulisci filtri** per tornare all'elenco completo.
 
 Premere il nome di una colonna per ordinare. La freccia colorata indica la
@@ -32,8 +31,7 @@ colonna selezionata e la direzione crescente o decrescente.
 
 Usare **Compatta** per i dati essenziali. Usare **Estesa** per tutti i campi.
 Usare le frecce di paginazione oppure digitare il numero della pagina nel campo
-dedicato. Se la tabella supera lo spazio disponibile, scorrere la sola tabella
-in orizzontale.
+dedicato.
 
 ## 3. Consultare i dettagli
 
@@ -42,7 +40,7 @@ le partecipazioni effettuate.
 
 Premere il titolo di un quiz per consultare periodo, stato, domande e
 partecipanti. Premere **Mostra soluzioni** per visualizzare risposte corrette e
-errate. Premere di nuovo il controllo per nasconderle.
+errate. Premere **Nascondi soluzioni** per nasconderle.
 
 Premere l'icona di apertura di una partecipazione per consultare punteggio e
 risposte. Aprire una domanda alla volta. Usare **Mostra soluzioni** per
@@ -73,7 +71,7 @@ L'abbandono non crea una partecipazione.
 ## 5. Gestire gli utenti
 
 Premere **Nuovo utente** nell'elenco Utenti. Compilare username, nome, cognome
-ed email. Lo username non può essere modificato dopo la creazione.
+ed email. Lo username non può essere modificato dopo la creazione e deve essere univoco.
 
 Aprire un profilo e premere l'icona matita per modificare nome, cognome o
 email. Premere Indietro per annullare.

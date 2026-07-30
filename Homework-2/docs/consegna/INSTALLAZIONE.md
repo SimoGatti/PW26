@@ -1,4 +1,4 @@
-# QUIZZING 2
+# QUIZZING
 
 ## Installazione e avvio
 
@@ -29,12 +29,17 @@ Preparare:
 6. credenziali amministrative PostgreSQL, soltanto se ruolo o database devono
    essere creati.
 
-Non usare Eclipse, Visual Studio, Visual Studio Code o altri IDE.
 
 Verificare Python:
 
 ```bash
 python3 --version
+```
+
+oppure
+
+```bash
+python --version
 ```
 
 Su Windows usare anche:
@@ -206,8 +211,3 @@ operativo e Python 3.12.
 ### Porta 8000 occupata
 
 Impostare `QUIZZING_PORT=8001` e ripetere l'avvio.
-
-### Installazione oltre cinque minuti
-
-Interrompere la prova. Verificare prima PostgreSQL, accesso a PyPI e
-credenziali. Ripetere da una copia pulita soltanto dopo la diagnosi.

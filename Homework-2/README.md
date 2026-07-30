@@ -1,9 +1,9 @@
-# QUIZZING 2
+# QUIZZING
 
 Ristrutturazione server-side del Progetto 1 basata su Python 3.12 o successivo, Django
 Templates, PostgreSQL, SQL esplicito e Bootstrap locale.
 
-`Homework-1` resta soltanto un riferimento funzionale: QUIZZING 2 include nel
+`Homework-1` resta soltanto un riferimento funzionale: QUIZZING include nel
 proprio albero sia lo schema sia il dataset iniziale e non dipende da file del
 primo progetto.
 
