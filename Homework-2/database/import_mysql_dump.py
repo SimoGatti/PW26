@@ -7,6 +7,7 @@ importata perché il modello P2 usa cancellazione fisica e non soft delete.
 import argparse
 import os
 import re
+from datetime import date
 from pathlib import Path
 
 import psycopg
@@ -14,6 +15,13 @@ from psycopg import sql
 
 TABLES = ("Utente", "Quiz", "Domanda", "Risposta", "Partecipazione", "RispostaUtenteQuiz")
 INSERT_HEADER_RE = re.compile(r"INSERT INTO `(?P<table>\w+)` \((?P<columns>[^)]*)\) VALUES\s*", re.DOTALL)
+STATUS_COVERAGE_START = date(2026, 7, 30)
+STATUS_COVERAGE_END = date(2026, 9, 30)
+STATUS_QUIZ_COUNT = 12
+OPEN_START = date(2026, 7, 1)
+OPEN_END = date(2026, 10, 15)
+FUTURE_START = date(2026, 10, 1)
+FUTURE_END = date(2026, 12, 1)
 
 
 def split_rows(values):
@@ -170,69 +178,94 @@ def import_dump(parsed):
                 counts[table] += len(batch)
         cursor.execute('SELECT setval(pg_get_serial_sequence(\'"Quiz"\', \'codice\'), COALESCE((SELECT MAX(codice) FROM "Quiz"), 1), true)')
         cursor.execute('SELECT setval(pg_get_serial_sequence(\'"Partecipazione"\', \'codice\'), COALESCE((SELECT MAX(codice) FROM "Partecipazione"), 1), true)')
-        add_status_fixtures(cursor)
+        retime_status_quizzes(cursor)
     return counts
 
 
-def add_status_fixtures(cursor):
-    """Aggiunge fixture senza partecipazioni, senza alterare il dump storico.
+def retime_status_quizzes(cursor):
+    """Sposta alcuni quiz storici per coprire gli stati richiesti nel 2026.
 
-    Il dump sorgente colloca tutti i quiz nel 2024. Per soddisfare DATA-03
-    vengono clonate 24 domande/risposte in quiz aperti e 24 futuri, senza
-    spostare date di partecipazioni esistenti fuori dal periodo del quiz.
+    I quiz futuri non possono conservare tentativi precedenti al loro inizio;
+    vengono scelti quelli con meno partecipazioni e rimossi i soli tentativi
+    sintetici collegati. Per i quiz aperti le date dei tentativi vengono
+    riallineate al nuovo periodo.
     """
-    cursor.execute('SELECT codice, creatore, titolo FROM "Quiz" ORDER BY codice LIMIT 24')
-    sources = cursor.fetchall()
-    for label, start_sql, end_sql in (
-        ("aperto", "CURRENT_DATE - 14", "CURRENT_DATE + 45"),
-        ("futuro", "CURRENT_DATE + 7", "CURRENT_DATE + 60"),
-    ):
-        for source_code, creator, title in sources:
-            cursor.execute(
-                f'INSERT INTO "Quiz" (creatore, titolo, "dataInizio", "dataFine") '
-                f'VALUES (%s, %s, {start_sql}, {end_sql}) RETURNING codice',
-                [creator, f"{title} — demo {label}"],
-            )
-            fixture_code = cursor.fetchone()[0]
-            cursor.execute(
-                'INSERT INTO "Domanda" (quiz, numero, testo) '
-                'SELECT %s, numero, testo FROM "Domanda" WHERE quiz=%s',
-                [fixture_code, source_code],
-            )
-            cursor.execute(
-                'INSERT INTO "Risposta" (quiz, domanda, numero, testo, tipo, punteggio) '
-                'SELECT %s, domanda, numero, testo, tipo, punteggio FROM "Risposta" WHERE quiz=%s',
-                [fixture_code, source_code],
-            )
-            if label == "aperto":
-                add_multiple_choice_question(cursor, fixture_code)
-
-
-def add_multiple_choice_question(cursor, quiz_code):
-    """Aggiunge un caso semanticamente valido che richiede più selezioni."""
     cursor.execute(
-        'SELECT COALESCE(MAX(numero), 0) + 1 FROM "Domanda" WHERE quiz=%s',
+        '''
+        SELECT q.codice
+        FROM "Quiz" q
+        LEFT JOIN "Partecipazione" p ON p.quiz = q.codice
+        GROUP BY q.codice
+        ORDER BY COUNT(p.codice), q.codice
+        LIMIT %s
+        ''',
+        [STATUS_QUIZ_COUNT],
+    )
+    future_codes = [row[0] for row in cursor.fetchall()]
+    cursor.execute(
+        '''
+        SELECT codice
+        FROM "Quiz"
+        WHERE NOT (codice = ANY(%s))
+        ORDER BY codice DESC
+        LIMIT %s
+        ''',
+        [future_codes, STATUS_QUIZ_COUNT],
+    )
+    open_codes = [row[0] for row in cursor.fetchall()]
+
+    cursor.execute(
+        'DELETE FROM "RispostaUtenteQuiz" '
+        'WHERE partecipazione IN ('
+        'SELECT codice FROM "Partecipazione" WHERE quiz = ANY(%s))',
+        [future_codes],
+    )
+    cursor.execute(
+        'DELETE FROM "Partecipazione" WHERE quiz = ANY(%s)',
+        [future_codes],
+    )
+
+    for offset, quiz_code in enumerate(open_codes):
+        start_date = OPEN_START.replace(day=OPEN_START.day + offset)
+        end_date = OPEN_END.replace(day=OPEN_END.day + offset)
+        cursor.execute(
+            'UPDATE "Quiz" SET "dataInizio"=%s, "dataFine"=%s '
+            'WHERE codice=%s',
+            [start_date, end_date, quiz_code],
+        )
+        cursor.execute(
+            'UPDATE "Partecipazione" SET data=%s + MOD(codice, 45) '
+            'WHERE quiz=%s',
+            [STATUS_COVERAGE_START, quiz_code],
+        )
+
+    for offset, quiz_code in enumerate(future_codes):
+        start_date = FUTURE_START.replace(day=FUTURE_START.day + offset)
+        end_date = FUTURE_END.replace(day=FUTURE_END.day + offset)
+        cursor.execute(
+            'UPDATE "Quiz" SET "dataInizio"=%s, "dataFine"=%s '
+            'WHERE codice=%s',
+            [start_date, end_date, quiz_code],
+        )
+
+    enable_multiple_choice_question(cursor, open_codes[0])
+
+
+def enable_multiple_choice_question(cursor, quiz_code):
+    """Rende multipla una domanda esistente senza aggiungere nuove righe."""
+    cursor.execute(
+        '''
+        UPDATE "Risposta"
+        SET tipo='Corretta', punteggio=1
+        WHERE (quiz, domanda, numero) = (
+            SELECT quiz, domanda, numero
+            FROM "Risposta"
+            WHERE quiz=%s AND tipo='Sbagliata'
+            ORDER BY domanda, numero
+            LIMIT 1
+        )
+        ''',
         [quiz_code],
-    )
-    question_number = cursor.fetchone()[0]
-    cursor.execute(
-        'INSERT INTO "Domanda" (quiz, numero, testo) VALUES (%s, %s, %s)',
-        [
-            quiz_code,
-            question_number,
-            "Seleziona tutti e soli i numeri pari.",
-        ],
-    )
-    cursor.executemany(
-        'INSERT INTO "Risposta" '
-        '(quiz, domanda, numero, testo, tipo, punteggio) '
-        'VALUES (%s, %s, %s, %s, %s, %s)',
-        [
-            (quiz_code, question_number, 1, "2", "Corretta", 1),
-            (quiz_code, question_number, 2, "3", "Sbagliata", None),
-            (quiz_code, question_number, 3, "4", "Corretta", 1),
-            (quiz_code, question_number, 4, "5", "Sbagliata", None),
-        ],
     )
 
 

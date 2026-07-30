@@ -155,6 +155,26 @@ class InitialDatasetTests(TestCase):
             },
         )
 
+    def test_retimed_quizzes_cover_the_delivery_window(self):
+        """Quiz aperti e futuri restano disponibili per tutto l'intervallo."""
+        latest_open_start = importer.OPEN_START.replace(
+            day=importer.OPEN_START.day + importer.STATUS_QUIZ_COUNT - 1
+        )
+        earliest_open_end = importer.OPEN_END
+        earliest_future_start = importer.FUTURE_START
+        self.assertLessEqual(
+            latest_open_start,
+            importer.STATUS_COVERAGE_START,
+        )
+        self.assertGreaterEqual(
+            earliest_open_end,
+            importer.STATUS_COVERAGE_END,
+        )
+        self.assertGreater(
+            earliest_future_start,
+            importer.STATUS_COVERAGE_END,
+        )
+
 
 class LauncherSafetyTests(TestCase):
     """Copre la propagazione sicura degli argomenti nei launcher."""
