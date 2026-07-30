@@ -171,7 +171,111 @@ Su Windows:
 .\.venv\Scripts\python.exe scripts\bootstrap-local.py --check-only
 ```
 
-## 9. Risoluzione dei problemi
+## 9. Reset completo e ricaricamento del dataset
+
+Il bootstrap non offre un flag per sovrascrivere i dati esistenti. Anche
+`--yes` conferma soltanto operazioni additive. Per ripartire dal dataset
+incluso bisogna prima eseguire intenzionalmente `database/reset_schema.sql`.
+
+Questa procedura elimina definitivamente utenti, quiz, domande, risposte e
+partecipazioni. Le tabelle interne di Django vengono conservate. Arrestare
+prima il server con `Ctrl+C` e usare il reset soltanto se i dati applicativi
+non devono essere recuperati.
+
+### macOS o Linux
+
+Dalla cartella `Homework-2`, caricare la configurazione locale:
+
+```bash
+set -a
+source .env
+set +a
+```
+
+Eseguire quindi il reset:
+
+```bash
+PGPASSWORD="$POSTGRES_PASSWORD" psql \
+  -h "$POSTGRES_HOST" \
+  -p "$POSTGRES_PORT" \
+  -U "$POSTGRES_USER" \
+  -d "$POSTGRES_DB" \
+  -f database/reset_schema.sql
+```
+
+### Windows PowerShell
+
+Dalla cartella `Homework-2`, caricare `.env` nel processo corrente:
+
+```powershell
+Get-Content .env | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]*)=(.*)$') {
+        [Environment]::SetEnvironmentVariable(
+            $matches[1].Trim(),
+            $matches[2],
+            "Process"
+        )
+    }
+}
+```
+
+Eseguire quindi il reset:
+
+```powershell
+$env:PGPASSWORD = $env:POSTGRES_PASSWORD
+psql `
+  -h $env:POSTGRES_HOST `
+  -p $env:POSTGRES_PORT `
+  -U $env:POSTGRES_USER `
+  -d $env:POSTGRES_DB `
+  -f database/reset_schema.sql
+Remove-Item Env:PGPASSWORD
+```
+
+### Windows CMD
+
+Dalla cartella `Homework-2`, caricare `.env` nel processo corrente:
+
+```cmd
+for /f "usebackq eol=# tokens=1,* delims==" %A in (".env") do @set "%A=%B"
+```
+
+Eseguire quindi il reset:
+
+```cmd
+set "PGPASSWORD=%POSTGRES_PASSWORD%"
+psql -h "%POSTGRES_HOST%" -p "%POSTGRES_PORT%" -U "%POSTGRES_USER%" -d "%POSTGRES_DB%" -f database/reset_schema.sql
+set "PGPASSWORD="
+```
+
+Su tutti i sistemi, lo script chiede di digitare esattamente:
+
+```text
+RESET QUIZZING
+```
+
+Una conferma diversa interrompe il reset senza cancellare dati. Dopo un reset
+completato, ricaricare il dataset e avviare QUIZZING.
+
+macOS o Linux:
+
+```bash
+./scripts/run-local.sh --yes
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\run-local.ps1 --yes
+```
+
+Windows CMD:
+
+```cmd
+scripts\run-local.cmd --yes
+```
+
+## 10. Risoluzione dei problemi
 
 ### `connection refused`
 
