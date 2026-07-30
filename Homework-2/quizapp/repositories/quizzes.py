@@ -30,6 +30,8 @@ def search(filters, state):
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
     having = " HAVING " + " AND ".join(aggregate_filters) if aggregate_filters else ""
     base = ' FROM "Quiz" q LEFT JOIN "Domanda" d ON d.quiz=q.codice LEFT JOIN "Partecipazione" p ON p.quiz=q.codice' + where + ' GROUP BY q.codice, q.creatore, q.titolo, q."dataInizio", q."dataFine"' + having
+    # Il frammento ORDER BY non proviene mai direttamente dalla query string:
+    # ``list_state`` lo valida e questa mappa lo traduce in SQL noto.
     sort={
         "code":"q.codice",
         "title":"q.titolo",
@@ -46,6 +48,7 @@ def search(filters, state):
         ),
     }[state.sort]
     with connection.cursor() as c:
+        # Totale e pagina riusano la stessa base SQL, inclusi i filtri HAVING.
         c.execute("SELECT count(*) FROM (SELECT 1"+base+") x", params); total=c.fetchone()[0]
         c.execute('SELECT q.codice, q.creatore, q.titolo, q."dataInizio" AS start_date, q."dataFine" AS end_date, COUNT(DISTINCT d.numero) AS questions, COUNT(DISTINCT p.codice) AS participations'+base+f' ORDER BY {sort} {state.direction}, q.codice ASC LIMIT %s OFFSET %s',params+[state.size,state.offset]); result=rows(c)
     for q in result: q["status"] = status_for(q["start_date"], q["end_date"])

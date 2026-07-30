@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap locale conservativo e multipiattaforma per QUIZZING 2.
+"""Bootstrap locale conservativo e multipiattaforma per QUIZZING.
 
 Il bootstrap puo creare cio che manca, ma non elimina, tronca o sovrascrive
 dati applicativi. Ogni modifica a PostgreSQL richiede conferma, salvo l'uso
@@ -69,6 +69,7 @@ def print_step(message: str) -> None:
 
 
 def parse_env(path: Path) -> tuple[list[str], dict[str, str]]:
+    """Legge ``.env`` conservando righe e ordine per gli aggiornamenti."""
     lines = path.read_text(encoding="utf-8").splitlines() if path.exists() else []
     values: dict[str, str] = {}
     for number, raw in enumerate(lines, start=1):
@@ -94,6 +95,7 @@ def parse_env(path: Path) -> tuple[list[str], dict[str, str]]:
 
 
 def set_env_line(lines: list[str], name: str, value: str) -> None:
+    """Sostituisce una variabile esistente o la aggiunge in fondo al file."""
     matcher = re.compile(rf"^\s*(?:export\s+)?{re.escape(name)}\s*=")
     for index, line in enumerate(lines):
         if matcher.match(line):
@@ -105,6 +107,7 @@ def set_env_line(lines: list[str], name: str, value: str) -> None:
 
 
 def ensure_environment() -> dict[str, str]:
+    """Completa ``.env`` senza sovrascrivere configurazioni personalizzate."""
     print_step(f"Preparazione della configurazione {ENV_FILE}")
     inherited_environment = dict(os.environ)
     if ENV_FILE.exists() and not ENV_FILE.is_file():
@@ -160,6 +163,8 @@ def ensure_environment() -> dict[str, str]:
     if not 1 <= port <= 65535:
         raise BootstrapError("POSTGRES_PORT deve essere compresa tra 1 e 65535.")
 
+    # Le variabili esportate dal chiamante hanno precedenza solo nel processo
+    # corrente; il file resta una configurazione locale riproducibile.
     runtime_values = dict(values)
     for name, value in values.items():
         inherited = inherited_environment.get(name)
@@ -170,6 +175,7 @@ def ensure_environment() -> dict[str, str]:
 
 
 def app_connection_kwargs(values: dict[str, str]) -> dict[str, object]:
+    """Traduce la configurazione applicativa nei parametri di psycopg."""
     return {
         "host": values["POSTGRES_HOST"],
         "port": values["POSTGRES_PORT"],
@@ -181,6 +187,7 @@ def app_connection_kwargs(values: dict[str, str]) -> dict[str, object]:
 
 
 def connect_app(values: dict[str, str]) -> psycopg.Connection:
+    """Apre una connessione con il ruolo usato dall'applicazione."""
     return psycopg.connect(**app_connection_kwargs(values))
 
 
@@ -191,6 +198,7 @@ def ask(prompt: str, default: str = "") -> str:
 
 
 def confirmed(question: str, assume_yes: bool) -> bool:
+    """Richiede conferma esplicita prima di una modifica additiva."""
     if assume_yes:
         print(f"{question} si (--yes)")
         return True
@@ -205,6 +213,7 @@ def confirmed(question: str, assume_yes: bool) -> bool:
 def admin_connection(
     args: argparse.Namespace,
 ) -> tuple[psycopg.Connection, dict[str, object]]:
+    """Raccoglie le credenziali amministrative senza salvarle in ``.env``."""
     is_windows = platform.system() == "Windows"
     default_user = "postgres" if is_windows else getpass.getuser()
     default_host = "127.0.0.1" if is_windows else "/tmp"
@@ -250,6 +259,7 @@ def admin_connection(
 
 
 def scalar(connection: psycopg.Connection, query: str, params=()):
+    """Restituisce la prima colonna della prima riga di una query."""
     with connection.cursor() as cursor:
         cursor.execute(query, params)
         row = cursor.fetchone()
@@ -261,6 +271,7 @@ def provision_database(
     args: argparse.Namespace,
     original_error: psycopg.Error,
 ) -> None:
+    """Crea o autorizza ruolo e database senza rimuovere oggetti esistenti."""
     print("\nLa connessione applicativa non e disponibile.")
     print(f"Dettaglio: {original_error}")
     print("Verranno controllati ruolo e database senza cancellare nulla.")
@@ -290,6 +301,8 @@ def provision_database(
                 f"garantire al ruolo {app_user!r} l'accesso al database esistente"
             )
 
+        # Una password di un ruolo scelto dall'utente non viene mai modificata
+        # automaticamente: potrebbe essere condivisa con altri progetti.
         if role_exists and app_user != "quizzing_app" and database_exists:
             raise BootstrapError(
                 "Il ruolo e il database esistono, ma le credenziali applicative "
@@ -385,6 +398,7 @@ def index_names(connection: psycopg.Connection) -> set[str]:
 
 
 def validate_domain_columns(connection: psycopg.Connection) -> None:
+    """Rifiuta schemi parziali che richiederebbero una migrazione distruttiva."""
     problems: list[str] = []
     with connection.cursor() as cursor:
         for table, expected in EXPECTED_COLUMNS.items():
@@ -406,6 +420,7 @@ def validate_domain_columns(connection: psycopg.Connection) -> None:
 
 
 def domain_counts(connection: psycopg.Connection) -> dict[str, int]:
+    """Conta le righe per decidere se proporre il dataset iniziale."""
     counts: dict[str, int] = {}
     with connection.cursor() as cursor:
         for table in EXPECTED_COLUMNS:
@@ -417,6 +432,7 @@ def domain_counts(connection: psycopg.Connection) -> dict[str, int]:
 
 
 def run_manage(arguments: Iterable[str], *, check: bool = True) -> int:
+    """Esegue un comando Django con interprete e ambiente correnti."""
     command = [sys.executable, str(MANAGE), *arguments]
     print("    " + " ".join(command))
     completed = subprocess.run(
@@ -434,6 +450,7 @@ def run_manage(arguments: Iterable[str], *, check: bool = True) -> int:
 
 
 def run_python_script(script: Path, arguments: Iterable[str]) -> int:
+    """Esegue uno script ausiliario e traduce gli errori per l'utente."""
     command = [sys.executable, str(script), *arguments]
     print("    " + " ".join(command))
     completed = subprocess.run(
@@ -451,6 +468,7 @@ def run_python_script(script: Path, arguments: Iterable[str]) -> int:
 
 
 def apply_schema(connection: psycopg.Connection) -> None:
+    """Applica lo schema additivo in una singola transazione."""
     if not INIT_SCHEMA.is_file():
         raise BootstrapError(f"Schema iniziale non trovato: {INIT_SCHEMA}")
     try:
@@ -466,10 +484,13 @@ def initialize_application(
     connection: psycopg.Connection,
     args: argparse.Namespace,
 ) -> None:
+    """Controlla schema, migrazioni e dataset prima dell'avvio."""
     existing_tables = table_names(connection)
     missing_tables = set(EXPECTED_COLUMNS) - existing_tables
     missing_indexes = EXPECTED_INDEXES - index_names(connection)
 
+    # Se esiste già almeno una tabella di dominio, prima di aggiungere oggetti
+    # si controlla che le colonne note siano compatibili.
     if not missing_tables:
         validate_domain_columns(connection)
         counts = domain_counts(connection)
@@ -554,6 +575,7 @@ def initialize_application(
 
 
 def parse_args() -> argparse.Namespace:
+    """Definisce le sole opzioni supportate dal bootstrap condiviso."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--yes",
@@ -592,6 +614,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Coordina configurazione, PostgreSQL, controlli Django e avvio."""
     args = parse_args()
     values = ensure_environment()
     try:
@@ -626,7 +649,7 @@ def main() -> int:
             raise BootstrapError("QUIZZING_PORT non e numerica.") from exc
         if not 1 <= port <= 65535:
             raise BootstrapError("QUIZZING_PORT deve essere tra 1 e 65535.")
-        print(f"\nAvvio QUIZZING 2 su http://{host}:{port}/")
+        print(f"\nAvvio QUIZZING su http://{host}:{port}/")
         print("Interrompere il server con Ctrl+C.")
         return run_manage(["runserver", f"{host}:{port}"], check=False)
     return 0

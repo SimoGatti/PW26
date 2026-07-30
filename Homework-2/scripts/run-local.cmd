@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 
-rem Entrypoint Windows CMD di QUIZZING 2.
+rem Entrypoint Windows CMD di QUIZZING.
 rem Prepara Python e delega ogni controllo PostgreSQL al bootstrap comune.
 
 for %%I in ("%~dp0..") do set "PROJECT_DIR=%%~fI"
@@ -53,7 +53,7 @@ if not "%PIP_EXIT_CODE%"=="0" (
 set "EXIT_CODE=%ERRORLEVEL%"
 if not "%EXIT_CODE%"=="0" (
     echo. 1>&2
-    echo ERRORE: avvio di QUIZZING 2 interrotto con codice %EXIT_CODE%. 1>&2
+    echo ERRORE: avvio di QUIZZING interrotto con codice %EXIT_CODE%. 1>&2
 )
 exit /b %EXIT_CODE%
 

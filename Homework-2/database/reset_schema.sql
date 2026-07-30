@@ -1,4 +1,4 @@
-\echo 'ATTENZIONE: reset distruttivo dello schema applicativo QUIZZING 2.'
+\echo 'ATTENZIONE: reset distruttivo dello schema applicativo QUIZZING.'
 \echo 'Questo file elimina definitivamente tutte le tabelle e i dati applicativi.'
 \prompt 'Per continuare digitare esattamente RESET QUIZZING: ' confirmation
 

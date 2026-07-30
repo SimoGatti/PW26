@@ -44,6 +44,7 @@ random.seed(42)
 # FUNZIONI DI SUPPORTO
 # ==============================================================================
 def esc(val):
+    """Converte un valore Python in un letterale compatibile col dump MySQL."""
     if val is None:
         return "NULL"
     if isinstance(val, int):
@@ -51,6 +52,7 @@ def esc(val):
     return "'" + str(val).replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 def rand_date(start: date, end: date) -> date:
+    """Estrae una data nell'intervallo, includendo gli estremi validi."""
     if start >= end:
         return start
     return start + timedelta(days=random.randint(0, (end - start).days))
@@ -59,6 +61,7 @@ def rand_date(start: date, end: date) -> date:
 # 1. GENERATORE NOMI UTENTE SINTETICI (2.500 Utenti)
 # ==============================================================================
 def generate_users(count):
+    """Genera utenti univoci partendo da un piccolo nucleo riconoscibile."""
     print(f"[1/5] Generazione di {count} utenti sintetici...")
     
     base_users = [
@@ -101,6 +104,7 @@ def generate_users(count):
 # 2. GENERAZIONE DOMANDE TRAMITE OPENAI (gpt-4o-mini)
 # ==============================================================================
 def fetch_ai_questions(client, category, batch_size=15):
+    """Richiede un lotto JSON e scarta risposte API non interpretabili."""
     prompt = f"""Genera esattamente {batch_size} domande a risposta multipla per un quiz in lingua ITALIANA.
 Categoria: '{category}'.
 Ogni domanda deve avere 4 opzioni di risposta: 1 corretta e 3 errate.
@@ -149,6 +153,7 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON avente la seguente struttura:
         return []
 
 def get_all_questions():
+    """Riprende la cache locale e completa il corpus fino al target."""
     print("[2/5] Caricamento domande ed eventuale ripristino da Cache locale...")
     
     all_questions = []
@@ -205,6 +210,7 @@ def get_all_questions():
 # 3. GENERAZIONE STRUTTURA DB & PARTECIPAZIONI
 # ==============================================================================
 def build_database_structures(users, questions):
+    """Costruisce record coerenti e partecipazioni comprese nel periodo quiz."""
     print("[3/5] Organizzazione Quiz, Domande, Risposte e Sessioni...") 
     
     utenti_nomi = [u[0] for u in users] 
@@ -282,6 +288,7 @@ def build_database_structures(users, questions):
 # 4. SCRITTURA DUMP SQL
 # ==============================================================================
 def write_sql_dump(users, quiz_list, domande_list, risposte_list, part_list, ruq_list):
+    """Scrive schema e INSERT a blocchi per contenere la memoria del client."""
     print(f"[5/5] Scrittura file SQL finale ({OUT_SQL_PATH})...")
     
     BATCH = 500
@@ -366,6 +373,7 @@ CREATE TABLE `RispostaUtenteQuiz` (
 """)
 
     def insert_block(table, cols, rows):
+        """Aggiunge gli INSERT di una tabella in lotti da 500 righe."""
         if not rows: return
         col_str = ", ".join(f"`{c}`" for c in cols)
         ln(f"-- {table}: {len(rows)} righe")

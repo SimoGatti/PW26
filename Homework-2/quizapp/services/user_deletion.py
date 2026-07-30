@@ -8,6 +8,8 @@ def delete_user(username):
     preview=deletion_preview(username)
     if not preview["allowed"]: raise ValueError("L'utente ha creato quiz già partecipati.")
     with transaction.atomic(), connection.cursor() as c:
+        # Le foreign key sono RESTRICT: l'ordine esplicito rende visibili tutte
+        # le dipendenze e impedisce cancellazioni a cascata involontarie.
         c.execute('DELETE FROM "RispostaUtenteQuiz" WHERE partecipazione IN (SELECT codice FROM "Partecipazione" WHERE utente=%s)',[username])
         c.execute('DELETE FROM "Partecipazione" WHERE utente=%s',[username])
         c.execute('DELETE FROM "Risposta" WHERE quiz IN (SELECT codice FROM "Quiz" WHERE creatore=%s)',[username])

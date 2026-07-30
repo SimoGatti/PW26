@@ -4,6 +4,8 @@ from pathlib import Path
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# I valori di ripiego sono destinati al solo avvio locale; in un ambiente
+# condiviso chi avvia il progetto deve impostare le corrispondenti variabili.
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "true").lower() == "true"
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", ".trycloudflare.com"]
@@ -30,6 +32,8 @@ TEMPLATES = [{
 }]
 WSGI_APPLICATION = "quizzing.wsgi.application"
 DATABASES = {"default": {
+    # Bootstrap e Django leggono gli stessi nomi, evitando due configurazioni
+    # PostgreSQL che potrebbero divergere.
     "ENGINE": "django.db.backends.postgresql",
     "NAME": os.getenv("POSTGRES_DB", "quizzing"), "USER": os.getenv("POSTGRES_USER", "quizzing"),
     "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""), "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),

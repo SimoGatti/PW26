@@ -1,4 +1,4 @@
-# Entrypoint Windows PowerShell 5.1/7 di QUIZZING 2.
+# Entrypoint Windows PowerShell 5.1/7 di QUIZZING.
 # Prepara Python e delega ogni controllo PostgreSQL al bootstrap comune.
 
 Set-StrictMode -Version Latest
@@ -107,7 +107,7 @@ try {
 }
 catch {
     Write-Host ""
-    Write-Host "AVVIO DI QUIZZING 2 INTERROTTO" -ForegroundColor Red
+    Write-Host "AVVIO DI QUIZZING INTERROTTO" -ForegroundColor Red
     Write-Host "Dettaglio: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }

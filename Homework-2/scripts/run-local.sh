@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Entrypoint macOS/Linux di QUIZZING 2.
+# Entrypoint macOS/Linux di QUIZZING.
 # Prepara Python e delega ogni controllo PostgreSQL al bootstrap comune.
 
 set -Eeuo pipefail

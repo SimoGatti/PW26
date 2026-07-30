@@ -1,3 +1,5 @@
+"""Test rapidi per form, stato delle liste e ordine delle risposte."""
+
 from unittest.mock import patch
 
 from django.test import RequestFactory, SimpleTestCase
@@ -7,6 +9,8 @@ from quizapp.services.answer_order import randomize_question_answers, shuffled
 from quizapp.services.quiz_attempt import start
 
 class QueryStateTests(SimpleTestCase):
+    """Copre normalizzazione e conservazione della query string."""
+
     def setUp(self): self.factory=RequestFactory()
     def test_invalid_parameters_use_safe_defaults(self):
         state=list_state(self.factory.get("/users/?page=-4&size=999&sort=sql&dir=drop"),{"username"},"username")
@@ -16,6 +20,8 @@ class QueryStateTests(SimpleTestCase):
         self.assertIn("nome=Anna",state.query(page=1))
 
 class UserFormTests(SimpleTestCase):
+    """Copre i vincoli essenziali del form utente condiviso."""
+
     def test_update_form_has_no_mutable_username(self):
         self.assertNotIn("nomeUtente",UserForm(editing=True).fields)
     def test_create_requires_valid_email(self):
@@ -37,6 +43,8 @@ class SessionStub(dict):
 
 
 class AnswerOrderTests(SimpleTestCase):
+    """Controlla lo shuffle senza affidarsi al caso nei test."""
+
     def test_shuffled_returns_a_new_permutation(self):
         original = [1, 2, 3, 4]
         result = shuffled(original, ReverseRandomizer())

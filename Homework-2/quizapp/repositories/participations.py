@@ -17,6 +17,8 @@ def search(filters,state):
             clauses.append(f"{column} {operator} %s")
             params.append(filters[field])
     where=" WHERE "+" AND ".join(clauses) if clauses else ""
+    # Il punteggio è derivato dalle risposte; non esiste una copia denormalizzata
+    # che rischierebbe di diventare incoerente.
     score='COALESCE(SUM(CASE WHEN r.tipo=\'Corretta\' THEN r.punteggio ELSE 0 END),0)'
     aggregate_filters = []
     for field, expression in [
@@ -33,6 +35,7 @@ def search(filters,state):
                 pass
     having = " HAVING " + " AND ".join(aggregate_filters) if aggregate_filters else ""
     base=' FROM "Partecipazione" p JOIN "Quiz" q ON q.codice=p.quiz LEFT JOIN "RispostaUtenteQuiz" ruq ON ruq.partecipazione=p.codice LEFT JOIN "Risposta" r ON (r.quiz,r.domanda,r.numero)=(ruq.quiz,ruq.domanda,ruq.risposta)'+where+' GROUP BY p.codice,p.utente,p.quiz,p.data,q.titolo'+having
+    # Solo le espressioni della whitelist possono entrare nell'ORDER BY.
     sort={"code":"p.codice","username":"p.utente","quiz":"q.titolo","date":"p.data","answers":"answers","score":"score"}[state.sort]
     with connection.cursor() as c:
         c.execute("SELECT count(*) FROM (SELECT 1"+base+") x",params);total=c.fetchone()[0]

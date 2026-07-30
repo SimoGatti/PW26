@@ -1,4 +1,4 @@
--- Inizializzazione additiva dello schema applicativo QUIZZING 2.
+-- Inizializzazione additiva dello schema applicativo QUIZZING.
 -- Questo file non contiene DROP, TRUNCATE, DELETE o UPDATE ed e sicuro da
 -- rieseguire: crea esclusivamente tabelle e indici mancanti.
 -- Le tabelle interne di Django sono gestite da `python manage.py migrate`.

@@ -44,9 +44,11 @@ def split_rows(values):
 
 
 def split_values(row):
+    """Converte una tupla MySQL rispettando stringhe, escape e valori NULL."""
     values, current, quoted, escaped, atom_quoted = [], [], False, False, False
 
     def flush():
+        """Chiude il valore corrente e prepara il buffer per il successivo."""
         nonlocal current, atom_quoted
         value = "".join(current).strip()
         values.append(value if atom_quoted else parse_atom(value))
@@ -77,6 +79,7 @@ def split_values(row):
 
 
 def parse_atom(value):
+    """Converte gli atomi non quotati lasciando intatti gli altri valori."""
     if value.upper() == "NULL":
         return None
     if re.fullmatch(r"-?\d+", value):
@@ -85,6 +88,7 @@ def parse_atom(value):
 
 
 def statements(path):
+    """Estrae gli INSERT delle sei tabelle senza caricare un parser MySQL."""
     source = Path(path).read_text(encoding="utf-8")
     found = {table: [] for table in TABLES}
     for header in INSERT_HEADER_RE.finditer(source):
@@ -93,6 +97,7 @@ def statements(path):
             continue
         quoted = escaped = False
         end = header.end()
+        # Il punto e virgola chiude l'INSERT soltanto fuori da una stringa.
         while end < len(source):
             char = source[end]
             if quoted:
@@ -118,6 +123,7 @@ def statements(path):
 
 
 def connection_string():
+    """Costruisce la DSN PostgreSQL dalla stessa configurazione di Django."""
     return "host={host} port={port} dbname={database} user={user} password={password}".format(
         host=os.getenv("POSTGRES_HOST", "127.0.0.1"),
         port=os.getenv("POSTGRES_PORT", "5432"),
@@ -147,12 +153,14 @@ def assert_tables_empty(cursor):
 
 
 def import_dump(parsed):
+    """Importa il dump in una transazione e riallinea le sequenze identity."""
     counts = {table: 0 for table in TABLES}
     with psycopg.connect(connection_string()) as connection, connection.cursor() as cursor:
         assert_tables_empty(cursor)
         for table in TABLES:
             for source_columns, source_rows in parsed[table]:
                 columns = [column for column in source_columns if column != "Attivo"]
+                # ``Attivo`` apparteneva alla soft delete del Progetto 1.
                 indices = [source_columns.index(column) for column in columns]
                 placeholders = ", ".join(["%s"] * len(columns))
                 quoted_columns = ", ".join(f'"{column}"' for column in columns)
@@ -229,6 +237,7 @@ def add_multiple_choice_question(cursor, quiz_code):
 
 
 def main():
+    """Valida gli argomenti e avvia analisi o importazione effettiva."""
     parser = argparse.ArgumentParser()
     parser.add_argument("dump", type=Path)
     parser.add_argument("--dry-run", action="store_true", help="analizza soltanto il dump")

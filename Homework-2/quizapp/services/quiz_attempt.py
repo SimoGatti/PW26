@@ -36,6 +36,8 @@ def validate_and_submit(session, token):
     if not attempt or not secrets.compare_digest(attempt["token"], token): raise ValueError("Tentativo non valido o già inviato.")
     quiz_code, username=attempt["quiz_code"],attempt["username"]
     with transaction.atomic(), connection.cursor() as c:
+        # Utente, periodo e appartenenza delle risposte vengono ricontrollati
+        # al submit: i dati potrebbero essere cambiati dopo l'apertura del quiz.
         c.execute('SELECT 1 FROM "Utente" WHERE "nomeUtente"=%s',[username])
         if not c.fetchone(): raise ValueError("Utente non più disponibile.")
         c.execute('SELECT 1 FROM "Quiz" WHERE codice=%s AND "dataInizio"<=CURRENT_DATE AND "dataFine">=CURRENT_DATE',[quiz_code])

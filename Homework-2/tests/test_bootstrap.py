@@ -1,3 +1,5 @@
+"""Regressioni di sicurezza per bootstrap, schema e dataset iniziale."""
+
 import importlib.util
 import os
 import re
@@ -10,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def load_module(name, path):
+    """Carica uno script come modulo isolato per esercitarne le funzioni."""
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -27,6 +30,8 @@ importer = load_module(
 
 
 class EnvironmentBootstrapTests(TestCase):
+    """Verifica che ``.env`` venga completato senza perdere valori scelti."""
+
     def test_creates_uniform_dedicated_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
             env_file = Path(directory) / ".env"
@@ -107,6 +112,8 @@ class EnvironmentBootstrapTests(TestCase):
 
 
 class SchemaSafetyTests(TestCase):
+    """Blocca operazioni distruttive nello schema di prima installazione."""
+
     def test_initial_schema_contains_no_destructive_statements(self):
         source = (ROOT / "database" / "init_schema.sql").read_text(
             encoding="utf-8"
@@ -127,6 +134,8 @@ class SchemaSafetyTests(TestCase):
 
 
 class InitialDatasetTests(TestCase):
+    """Controlla dimensioni e completezza del dump consegnato."""
+
     def test_bundled_dump_is_complete(self):
         dataset = ROOT / "database" / "data" / "quiz_mysql_expanded.sql"
         parsed = importer.statements(dataset)
@@ -148,6 +157,8 @@ class InitialDatasetTests(TestCase):
 
 
 class LauncherSafetyTests(TestCase):
+    """Copre la propagazione sicura degli argomenti nei launcher."""
+
     def test_cmd_does_not_execute_shifted_percent_star(self):
         source = (ROOT / "scripts" / "run-local.cmd").read_text(
             encoding="utf-8"

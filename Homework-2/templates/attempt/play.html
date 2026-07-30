@@ -10,10 +10,12 @@
     <a class="button danger-outline abandon-trigger" href="{% url 'abandon-confirm' %}" data-confirm-target="abandon-confirmation"><span class="ui-icon icon-trash" aria-hidden="true"></span>Abbandona quiz</a>
   </div>
   <form method="post" class="attempt-form">{% csrf_token %}<input type="hidden" name="attempt_token" value="{{ attempt.token }}">
+    {# L'ordine è salvato nella bozza di sessione, quindi un reload non sposta le scelte. #}
     <div class="question-stack">{% for question in quiz.question_list %}<fieldset class="attempt-question"><legend><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></legend><p class="question-hint">{% if question.multiple %}Puoi selezionare più risposte.{% else %}Seleziona una risposta.{% endif %}</p><div class="attempt-answers">{% for answer in question.answers %}<label><input type="{% if question.multiple %}checkbox{% else %}radio{% endif %}" name="q_{{ question.number }}" value="{{ answer.answer_number }}" {% if answer.answer_number in question.selected %}checked{% endif %}><span>{{ answer.answer_text }}</span></label>{% endfor %}</div></fieldset>{% endfor %}</div>
     <div class="attempt-submit"><button class="button button-primary">Invia risposte <span class="ui-icon icon-right" aria-hidden="true"></span></button></div>
   </form>
 </article>
+{# Se JavaScript non è disponibile, il link porta alla pagina di conferma equivalente. #}
 <aside id="abandon-confirmation" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="abandon-title" aria-describedby="abandon-description" hidden>
   <div class="confirm-card">
     <div class="confirm-icon" aria-hidden="true"><span class="ui-icon icon-trash"></span></div>
