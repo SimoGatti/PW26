@@ -1,3 +1,7 @@
+/* Regole attivate dal solo miglioramento JavaScript: il pulsante GET resta
+   visibile e utilizzabile quando lo script non parte. */
 .js .filter-submit { display: none; }
+.questions-toggle-all { display: none; }
+.js .questions-toggle-all { display: inline-flex; }
 .js .live-filters[aria-busy="true"] { opacity: .72; }
 .live-update-status { position: fixed; right: 18px; bottom: 82px; z-index: 20; padding: 7px 10px; border-radius: 999px; background: var(--accent-dark); color: #fff; font-size: .7rem; box-shadow: var(--shadow); }

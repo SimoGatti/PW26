@@ -1,6 +1,10 @@
+// Miglioramenti progressivi: senza JavaScript form, link e conferme restano
+// normali richieste Django.
 document.documentElement.classList.add("js");
 
 (() => {
+  // Timer e AbortController evitano che una risposta lenta sovrascriva
+  // l'ultima ricerca digitata dall'utente.
   let timer;
   let requestController;
   let suggestionTimer;
@@ -23,6 +27,7 @@ document.documentElement.classList.add("js");
   }
 
   function enhance(container = document) {
+    // Questa funzione viene richiamata anche sui pannelli sostituiti via fetch.
     container.querySelectorAll(".range-filter").forEach((group) => {
       const ranges = [...group.querySelectorAll("input[type='range']")];
       ranges.forEach((range, index) => {
@@ -67,6 +72,7 @@ document.documentElement.classList.add("js");
           icon.setAttribute("aria-hidden", "true");
           button.append(icon);
           button.addEventListener("click", () => {
+            // Mezzogiorno evita cambi di giorno dovuti all'offset del fuso.
             const value = input.value ? new Date(`${input.value}T12:00:00`) : new Date();
             if (unit === "date") value.setDate(value.getDate() + amount);
             if (unit === "month") value.setMonth(value.getMonth() + amount);
@@ -87,6 +93,8 @@ document.documentElement.classList.add("js");
   }
 
   function captureInterfaceState() {
+    // I pannelli vengono rimpiazzati: posizione, focus e cursore vanno
+    // conservati esplicitamente per non interrompere la digitazione.
     const active = document.activeElement;
     return {
       leftScroll: document.querySelector(".left-panel .panel-body")?.scrollTop || 0,
@@ -132,6 +140,19 @@ document.documentElement.classList.add("js");
     confirmOpener = null;
   }
 
+  function syncQuestionsToggle(button) {
+    const stack = document.getElementById(button.getAttribute("aria-controls"));
+    const questions = [...(stack?.querySelectorAll("details.question-card") || [])];
+    const allOpen = questions.length > 0 && questions.every((item) => item.open);
+    const label = allOpen ? "Comprimi tutte" : "Espandi tutte";
+    const icon = button.querySelector(".ui-icon");
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.setAttribute("aria-expanded", String(allOpen));
+    icon?.classList.toggle("icon-expand-all", !allOpen);
+    icon?.classList.toggle("icon-collapse-all", allOpen);
+  }
+
   async function updateListing(url, push = true) {
     const interfaceState = captureInterfaceState();
     requestController?.abort();
@@ -151,6 +172,7 @@ document.documentElement.classList.add("js");
       const nextLeft = next.querySelector(".left-panel .panel-body");
       const nextCenter = next.querySelector(".center-panel .panel-body");
       if (!nextLeft || !nextCenter) {
+        // Una risposta inattesa viene lasciata gestire al browser come GET.
         window.location.assign(url);
         return;
       }
@@ -177,6 +199,8 @@ document.documentElement.classList.add("js");
     updateListing(url);
   }
 
+  // Gli handler sono delegati a document perché filtri, tabelle e paginazione
+  // vengono sostituiti dopo ogni aggiornamento.
   document.addEventListener("submit", (event) => {
     const form = event.target;
     if (form.matches(".live-filters")) {
@@ -273,14 +297,48 @@ document.documentElement.classList.add("js");
       updateListing(link.href);
       return;
     }
+    const questionsToggle = event.target.closest(".questions-toggle-all");
+    if (questionsToggle) {
+      const stack = document.getElementById(
+        questionsToggle.getAttribute("aria-controls")
+      );
+      if (!stack) return;
+      const questions = [...stack.querySelectorAll("details.question-card")];
+      const shouldOpen = questions.some((item) => !item.open);
+      questions.forEach((item) => {
+        item.open = shouldOpen;
+      });
+      syncQuestionsToggle(questionsToggle);
+      return;
+    }
     const solutions = event.target.closest(".solutions-toggle");
     if (solutions) {
+      event.preventDefault();
       const stack = solutions.closest(".content-section").querySelector(".question-stack");
       const hidden = stack.classList.toggle("solutions-hidden");
-      solutions.textContent = hidden ? "Mostra soluzioni" : "Nascondi soluzioni";
+      const label = hidden ? "Mostra soluzioni" : "Nascondi soluzioni";
+      const icon = solutions.querySelector(".ui-icon");
+      solutions.href = hidden
+        ? solutions.dataset.showUrl
+        : solutions.dataset.hideUrl;
+      solutions.setAttribute("aria-label", label);
+      solutions.setAttribute("title", label);
       solutions.setAttribute("aria-pressed", String(!hidden));
+      icon?.classList.toggle("icon-eye", hidden);
+      icon?.classList.toggle("icon-eye-off", !hidden);
     }
   });
+
+  // Mantiene coerente il controllo globale anche se una domanda viene aperta
+  // o chiusa singolarmente.
+  document.addEventListener("toggle", (event) => {
+    if (!event.target.matches("details.question-card")) return;
+    const stack = event.target.closest(".question-stack");
+    const button = document.querySelector(
+      `.questions-toggle-all[aria-controls="${stack.id}"]`
+    );
+    if (button) syncQuestionsToggle(button);
+  }, true);
 
   document.addEventListener("keydown", (event) => {
     const confirmation = document.querySelector(".confirm-overlay:not([hidden])");
@@ -291,6 +349,7 @@ document.documentElement.classList.add("js");
         return;
       }
       if (event.key === "Tab") {
+        // La modale custom trattiene il focus finché viene chiusa.
         const focusable = [...confirmation.querySelectorAll("button, a, input")]
           .filter((element) => !element.disabled && !element.hidden);
         if (focusable.length) {

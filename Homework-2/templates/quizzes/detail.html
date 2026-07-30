@@ -16,8 +16,15 @@
     {% if quiz.status == 'open' %}<a class="participate-cta" href="{% url 'participate' quiz.codice %}"><span aria-hidden="true"><span class="ui-icon icon-play"></span></span><span><strong>Partecipa</strong><small>Scegli l’utente e inizia</small></span></a>{% endif %}
   </div>
   <section class="content-section">
-    <div class="section-heading"><div><p class="eyebrow">Contenuto</p><h2 class="content-heading">Domande</h2></div><button type="button" class="button secondary solutions-toggle" aria-pressed="false">Mostra soluzioni</button></div>
-    <div class="question-stack solutions-hidden">
+    <div class="section-heading">
+      <div><p class="eyebrow">Contenuto</p><h2 class="content-heading">Domande</h2></div>
+      <div class="section-actions">
+        <button type="button" class="icon-button questions-toggle-all" aria-controls="quiz-questions" aria-expanded="false" aria-label="Espandi tutte" title="Espandi tutte"><span class="ui-icon icon-expand-all" aria-hidden="true"></span></button>
+        <a class="icon-button solutions-toggle" href="{% url 'quiz-detail' quiz.codice %}{% if not solutions_visible %}?solutions=1{% endif %}" data-show-url="{% url 'quiz-detail' quiz.codice %}?solutions=1" data-hide-url="{% url 'quiz-detail' quiz.codice %}" role="button" aria-pressed="{% if solutions_visible %}true{% else %}false{% endif %}" aria-label="{% if solutions_visible %}Nascondi soluzioni{% else %}Mostra soluzioni{% endif %}" title="{% if solutions_visible %}Nascondi soluzioni{% else %}Mostra soluzioni{% endif %}"><span class="ui-icon {% if solutions_visible %}icon-eye-off{% else %}icon-eye{% endif %}" aria-hidden="true"></span></a>
+      </div>
+    </div>
+    {# Le risposte arrivano già mescolate dalla view; il tipo non dipende dalla posizione. #}
+    <div id="quiz-questions" class="question-stack {% if not solutions_visible %}solutions-hidden{% endif %}">
       {% for question in quiz.question_list %}<details class="question-card"><summary><span class="question-number">{{ question.number }}</span><span>{{ question.text }}</span></summary><ul class="answer-list">{% for answer in question.answers %}<li><span class="solution-indicator {% if answer.tipo == 'Corretta' %}correct{% else %}wrong{% endif %}" aria-label="{% if answer.tipo == 'Corretta' %}Risposta corretta{% else %}Risposta errata{% endif %}"><span class="ui-icon {% if answer.tipo == 'Corretta' %}icon-check{% else %}icon-x{% endif %}" aria-hidden="true"></span></span><span class="answer-text">{{ answer.answer_text }}</span></li>{% endfor %}</ul></details>{% endfor %}
     </div>
   </section>
